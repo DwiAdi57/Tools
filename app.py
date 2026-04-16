@@ -255,7 +255,7 @@ def tampilkan_modal_disclaimer():
             st.markdown(f'<div style="text-align:center; color:#94a3b8;">Mohon baca dengan teliti... Tombol akan muncul dalam <b>{remaining} detik</b></div>', unsafe_allow_html=True)
         else:
             st.success("✅ Anda telah memahami seluruh risiko dan ketentuan.")
-            if st.button("SAYA MENGERTI, SETUJU & LANJUTKAN", type="primary", use_container_width=True):
+            if st.button("SAYA MENGERTI, SETUJU & LANJUTKAN", type="primary", width='stretch'):
                 st.session_state["disclaimer_accepted"] = True
                 st.rerun() # Ini akan merefresh seluruh halaman untuk menghilangkan dialog & blur
 
@@ -1579,7 +1579,7 @@ def main():
         cols_q1 = st.columns(3)
         for idx, (label, code) in enumerate(quick_picks_idx.items()):
             with cols_q1[idx % 3]:
-                if st.button(label, key=f"quick_idx_{code}", use_container_width=True):
+                if st.button(label, key=f"quick_idx_{code}", width='stretch'):
                     st.session_state["quick_pick"] = code
                     st.session_state["quick_pasar"] = "🇮🇩 IDX (Indonesia)"
                     st.rerun()
@@ -1588,7 +1588,7 @@ def main():
         cols_q2 = st.columns(3)
         for idx, (label, code) in enumerate(quick_picks_us.items()):
             with cols_q2[idx % 3]:
-                if st.button(label, key=f"quick_us_{code}", use_container_width=True):
+                if st.button(label, key=f"quick_us_{code}", width='stretch'):
                     st.session_state["quick_pick"] = code
                     st.session_state["quick_pasar"] = "🇺🇸 US (Amerika Serikat)"
                     st.rerun()
@@ -1597,7 +1597,7 @@ def main():
         cols_q3 = st.columns(3)
         for idx, (label, code) in enumerate(quick_picks_crypto.items()):
             with cols_q3[idx % 3]:
-                if st.button(label, key=f"quick_crypto_{code}", use_container_width=True):
+                if st.button(label, key=f"quick_crypto_{code}", width='stretch'):
                     st.session_state["quick_pick"] = code
                     st.session_state["quick_pasar"] = "🌕 Crypto (Digital Assets)"
                     st.rerun()
@@ -1719,7 +1719,7 @@ def main():
                 input_jumlah = st.number_input("Jumlah (Lot untuk IDX / Lembar untuk US)", min_value=1, value=1)
             with col_b3:
                 st.markdown("<br>", unsafe_allow_html=True)
-                if st.button("💾 Simpan ke Portfolio", type="primary", use_container_width=True):
+                if st.button("💾 Simpan ke Portfolio", type="primary", width='stretch'):
                     tambah_ke_portfolio(ticker_sym, nama_saham, input_harga, input_jumlah, kode_pasar)
                     st.success(f"Berhasil menambahkan {nama_saham} ke portfolio!")
                     time.sleep(1)
@@ -1792,7 +1792,7 @@ def main():
         with col_m1:
             # Gauge Power Score
             fig_power = buat_gauge_chart(power_score, f"{power_score:.0f}/100", "Master Power Score")
-            st.plotly_chart(fig_power, use_container_width=True)
+            st.plotly_chart(fig_power, width='stretch')
             
         with col_m2:
             st.markdown(f"""
@@ -1821,14 +1821,14 @@ def main():
 
             with col_r1:
                 fig_kualitas = buat_gauge_chart(skor_fund, label_fund, "Skor Fundamental (Kualitas)")
-                st.plotly_chart(fig_kualitas, use_container_width=True)
+                st.plotly_chart(fig_kualitas, width='stretch')
                 badge_class = "green" if "BERKUALITAS" in label_fund else ("red" if "KURANG" in label_fund else "yellow")
                 st.markdown(f'<div style="text-align:center"><span class="score-badge {badge_class}">{label_fund}</span></div>',
                             unsafe_allow_html=True)
 
             with col_r3:
                 fig_valuasi = buat_gauge_chart(skor_val, label_val, "Skor Valuasi (Mahal)")
-                st.plotly_chart(fig_valuasi, use_container_width=True)
+                st.plotly_chart(fig_valuasi, width='stretch')
                 badge_class_v = "green" if "MURAH" in label_val else ("red" if "MAHAL" in label_val else "yellow")
                 st.markdown(f'<div style="text-align:center"><span class="score-badge {badge_class_v}">{label_val}</span></div>',
                             unsafe_allow_html=True)
@@ -1837,14 +1837,14 @@ def main():
             col_c1, col_c2 = st.columns([1, 1])
             with col_c1:
                 fig_c_fund = buat_gauge_chart(skor_fund_final, "Digital Asset", "Digital Asset Score")
-                st.plotly_chart(fig_c_fund, use_container_width=True)
+                st.plotly_chart(fig_c_fund, width='stretch')
             with col_c2:
                 # Show drop from ATH as a "Value" indicator for crypto
                 ath = info.get("allTimeHigh")
                 if ath and harga_sekarang:
                     drop_ath = (ath - harga_sekarang) / ath * 100
                     fig_drop = buat_gauge_chart(drop_ath, "Drop from ATH", "Drop from ATH (%)")
-                    st.plotly_chart(fig_drop, use_container_width=True)
+                    st.plotly_chart(fig_drop, width='stretch')
 
         if show_explanation:
             st.markdown("""
@@ -1891,7 +1891,7 @@ def main():
         with st.container(border=True):
             fig_master = buat_chart_harga(data["hist_1y"], nama_saham)
             if fig_master:
-                st.plotly_chart(fig_master, use_container_width=True)
+                st.plotly_chart(fig_master, width='stretch')
             else:
                 st.warning("Data historis harga tidak tersedia untuk kalkulasi teknikal.")
 
@@ -2056,7 +2056,7 @@ def main():
 
             fig_fund = buat_chart_fundamental(data, nama_saham)
             if fig_fund:
-                st.plotly_chart(fig_fund, use_container_width=True)
+                st.plotly_chart(fig_fund, width='stretch')
             else:
                 st.info("Data untuk visualisasi fundamental tidak tersedia.")
 
@@ -2095,7 +2095,7 @@ def main():
                     showlegend=False,
                     yaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.05)"),
                 )
-                st.plotly_chart(fig_ni, use_container_width=True)
+                st.plotly_chart(fig_ni, width='stretch')
 
             # Industry Peer Comparison (Pro Mode Only)
             if st.session_state.get("pro_mode", False):
@@ -2132,7 +2132,7 @@ def main():
         """, unsafe_allow_html=True)
 
         action_label = "🔄 Jalankan Screening (IDX)" if kode_pasar == "IDX" else "🔄 Jalankan Screening (US)"
-        if st.button(action_label, use_container_width=True, type="primary"):
+        if st.button(action_label, width='stretch', type="primary"):
             progress = st.progress(0, "Memulai screening...")
 
             results = []
@@ -2409,7 +2409,7 @@ def main():
         
         with col_c2:
             search_query = st.text_input("🔍 Cari di Tabel:", placeholder="Ketik kode/nama...")
-            run_bulk = st.button("🔄 Jalankan Analisa Massal", use_container_width=True, type="primary")
+            run_bulk = st.button("🔄 Jalankan Analisa Massal", width='stretch', type="primary")
 
         if run_bulk or "bulk_results" in st.session_state:
             if run_bulk:
