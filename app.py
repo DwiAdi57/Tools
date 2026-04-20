@@ -39,153 +39,197 @@ st.set_page_config(
 # =====================================================================
 # CUSTOM CSS - PROFESSIONAL SLATE SUITE (ERGONOMIC)
 # =====================================================================
-st.markdown("""
+# =====================================================================
+# THEME CONFIGURATION
+# =====================================================================
+if "theme" not in st.session_state:
+    st.session_state["theme"] = "Dark Mode"
+
+THEMES = {
+    "Dark Mode": {
+        "bg_main": "#0f172a",
+        "bg_card": "rgba(30, 41, 59, 0.7)",
+        "bg_sidebar": "#020617",
+        "text_main": "#f1f5f9",
+        "text_sub": "#94a3b8",
+        "accent": "#38bdf8",
+        "border": "rgba(255, 255, 255, 0.1)",
+        "success": "#4ade80",
+        "danger": "#f43f5e",
+        "warning": "#f59e0b",
+        "shadow": "0 4px 20px rgba(0, 0, 0, 0.4)"
+    },
+    "Light Mode": {
+        "bg_main": "#f1f5f9",
+        "bg_card": "rgba(255, 255, 255, 0.9)",
+        "bg_sidebar": "#e2e8f0",
+        "text_main": "#1e293b",
+        "text_sub": "#475569",
+        "accent": "#0284c7",
+        "border": "rgba(0, 0, 0, 0.08)",
+        "success": "#16a34a",
+        "danger": "#dc2626",
+        "warning": "#d97706",
+        "shadow": "0 4px 20px rgba(0, 0, 0, 0.05)"
+    }
+}
+
+t = THEMES[st.session_state["theme"]]
+
+# =====================================================================
+# CUSTOM CSS - PREMIUM ADAPTIVE SUITE
+# =====================================================================
+st.markdown(f"""
 <style>
-    /* === BASE FONT & ERGONOMICS === */
     @import url('https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
 
-    :root {
-        --bg-main: #0f172a;
-        --bg-card: rgba(30, 41, 59, 0.7);
-        --accent-primary: #38bdf8;
-        --accent-secondary: #818cf8;
-        --text-main: #f1f5f9;
-        --text-sub: #94a3b8;
-        --success: #4ade80;
-        --danger: #f43f5e;
-        --warning: #f59e0b;
-    }
+    :root {{
+        --bg-main: {t['bg_main']};
+        --bg-card: {t['bg_card']};
+        --bg-sidebar: {t['bg_sidebar']};
+        --text-main: {t['text_main']};
+        --text-sub: {t['text_sub']};
+        --accent: {t['accent']};
+        --border: {t['border']};
+        --success: {t['success']};
+        --danger: {t['danger']};
+        --warning: {t['warning']};
+        --shadow: {t['shadow']};
+    }}
 
-    html, body, [class*="css"] {
+    /* === BASE FONT & RESPONSIVENESS === */
+    html, body, [class*="css"] {{
         font-family: 'Public Sans', sans-serif;
-        font-size: 20px; /* Highly increased base font size for clarity */
-    }
+        font-size: 16px; /* Base 16px for standard 100% zoom clarity */
+    }}
     
-    /* Responsive font scaling */
-    @media (max-width: 768px) {
-        html, body, [class*="css"] { font-size: 16px; }
-    }
+    @media (max-width: 768px) {{
+        html, body, [class*="css"] {{ font-size: 14px; }}
+    }}
 
-    code, pre {
+    code, pre {{
         font-family: 'JetBrains Mono', monospace !important;
-    }
+    }}
 
     /* === MAIN BACKGROUND === */
-    .stApp {
+    .stApp {{
         background: var(--bg-main) !important;
         color: var(--text-main) !important;
-    }
+    }}
 
-    /* === GLASSMORPHISM CARDS (Ergonomic) === */
-    .metric-card, .stMetric, .rekom-box, .explain-box {
+    /* === GLASSMORPHISM CARDS === */
+    .metric-card, .rekom-box, .explain-box {{
         background: var(--bg-card) !important;
-        backdrop-filter: blur(10px) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        backdrop-filter: blur(12px) !important;
+        border: 1px solid var(--border) !important;
         border-radius: 16px !important;
-        padding: 1.5rem !important;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2) !important;
-        transition: transform 0.2s ease, border-color 0.2s ease !important;
-    }
+        padding: 1.25rem !important;
+        box-shadow: var(--shadow) !important;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s ease !important;
+    }}
     
-    .metric-card:hover {
-        transform: translateY(-4px);
-        border-color: var(--accent-primary) !important;
-    }
+    .metric-card:hover {{
+        transform: translateY(-5px);
+        border-color: var(--accent) !important;
+    }}
 
     /* === RESPONSIVE LAYOUT FIXES === */
-    [data-testid="column"] {
+    [data-testid="column"] {{
         width: 100% !important;
-    }
-    @media (min-width: 768px) {
-        [data-testid="column"] { width: auto !important; }
-    }
+        flex: 1 1 calc(50% - 1rem) !important; /* Allow columns to wrap on tablet */
+        min-width: 250px !important;
+    }}
+    
+    @media (max-width: 640px) {{
+        [data-testid="column"] {{
+            min-width: 100% !important;
+        }}
+    }}
 
-    /* === HERO HEADER (Polished) === */
-    .hero-box {
-        background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    /* === HERO HEADER === */
+    .hero-box {{
+        background: linear-gradient(135deg, var(--bg-sidebar) 0%, var(--bg-main) 100%);
         border-radius: 20px;
-        padding: 2.5rem;
-        margin-bottom: 2.5rem;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-    }
-    .hero-box h1 {
-        font-size: 2.2rem;
+        padding: 2.25rem;
+        margin-bottom: 2rem;
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow);
+    }}
+    .hero-box h1 {{
+        font-size: 2rem;
         font-weight: 800;
         color: var(--text-main);
         margin: 0;
         line-height: 1.2;
-    }
+    }}
 
     /* === SECTION TITLES === */
-    .section-title {
-        font-size: 1.2rem; /* Reduced for better ergonomics */
+    .section-title {{
+        font-size: 1.15rem;
         font-weight: 700;
-        color: var(--accent-primary);
+        color: var(--accent);
         margin: 2rem 0 1rem 0;
         display: flex;
         align-items: center;
-        gap: 8px;
-    }
+        gap: 10px;
+    }}
 
-    /* === METRIC VALUES (Compact & Readable) === */
-    .metric-card .value {
-        font-size: 1.4rem; /* Reduced from 1.8rem for high-density UI */
+    /* === METRIC VALUES === */
+    .metric-card .value {{
+        font-size: 1.5rem;
         font-weight: 800;
-        color: var(--accent-primary);
-        word-wrap: break-word;
+        color: var(--accent);
         line-height: 1.1;
-    }
-    .metric-card .label {
+    }}
+    .metric-card .label {{
         font-size: 0.8rem;
         color: var(--text-sub);
         text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-bottom: 0.3rem;
-    }
-    .metric-card .sub {
+        letter-spacing: 0.8px;
+        margin-bottom: 0.4rem;
+    }}
+    .metric-card .sub {{
         font-size: 0.75rem;
         color: var(--text-sub);
-    }
+        margin-top: 5px;
+    }}
 
-    /* === SIDEBAR (Easy on eyes) === */
-    section[data-testid="stSidebar"] {
-        background-color: #020617 !important;
-        border-right: 1px solid rgba(255, 255, 255, 0.05);
-    }
+    /* === SIDEBAR CUSTOMIZATION === */
+    section[data-testid="stSidebar"] {{
+        background-color: var(--bg-sidebar) !important;
+        border-right: 1px solid var(--border);
+    }}
 
-    /* === ACCURACY TAG === */
-    .accuracy-tag {
+    /* === TABS CUSTOMIZATION === */
+    .stTabs [data-baseweb="tab-list"] {{
+        gap: 10px;
+    }}
+    .stTabs [data-baseweb="tab"] {{
+        background-color: var(--bg-card);
+        border-radius: 8px 8px 0 0;
+        padding: 10px 20px;
+        color: var(--text-sub);
+    }}
+    .stTabs [aria-selected="true"] {{
+        color: var(--accent) !important;
+        border-bottom-color: var(--accent) !important;
+    }}
+
+    /* === SCORE BADGES === */
+    .score-badge {{
         display: inline-block;
-        background: rgba(56, 189, 248, 0.1);
-        color: var(--accent-primary);
-        padding: 0.3rem 0.8rem;
+        padding: 4px 12px;
         border-radius: 50px;
-        font-size: 0.8rem;
+        font-size: 0.85rem;
         font-weight: 600;
-        margin-bottom: 1rem;
-    }
-
-    /* === COMPACT SIDEBAR BUTTONS === */
-    [data-testid="stSidebar"] button {
-        padding: 0.3rem 0.4rem !important; /* Extremely tight for professional terminal look */
-        min-height: 0 !important;
-        height: auto !important;
-        border-radius: 8px !important;
-    }
-    [data-testid="stSidebar"] button p {
-        font-size: 0.7rem !important; /* Further reduced to prevent overlap */
-        white-space: nowrap !important;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    /* Increase gap between buttons if possible */
-    [data-testid="stSidebar"] div[data-testid="stHorizontalBlock"] {
-        gap: 0.4rem !important;
-    }
+        margin: 5px 0;
+    }}
+    .score-badge.green {{ background: rgba(74, 222, 128, 0.15); color: #4ade80; }}
+    .score-badge.red {{ background: rgba(244, 63, 94, 0.15); color: #f43f5e; }}
+    .score-badge.yellow {{ background: rgba(245, 158, 11, 0.15); color: #f59e0b; }}
 
 </style>
-""", unsafe_allow_html=True)
+, unsafe_allow_html=True)
 
 
 # =====================================================================
@@ -1201,28 +1245,28 @@ def buat_chart_harga(hist, nama):
 
     fig.update_layout(
         title=f"📈 Pergerakan Harga {nama} (1 Tahun Terakhir)",
-        title_font=dict(size=16, color="#e0e0ff"),
+        title_font=dict(size=16, color=t['text_main']),
         xaxis_rangeslider_visible=False,
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
-        font=dict(color="#b8b8d0", family="Inter"),
+        font=dict(color=t['text_sub'], family="Public Sans"),
         legend=dict(
-            bgcolor="rgba(0,0,0,0.3)",
-            bordercolor="rgba(255,255,255,0.1)",
+            bgcolor=t['bg_card'],
+            bordercolor=t['border'],
             borderwidth=1,
-            font=dict(size=11),
+            font=dict(size=11, color=t['text_main']),
         ),
         height=550,
         margin=dict(l=10, r=10, t=60, b=10),
     )
 
     fig.update_xaxes(
-        gridcolor="rgba(255,255,255,0.05)",
-        zerolinecolor="rgba(255,255,255,0.05)",
+        gridcolor=t['border'],
+        zerolinecolor=t['border'],
     )
     fig.update_yaxes(
-        gridcolor="rgba(255,255,255,0.05)",
-        zerolinecolor="rgba(255,255,255,0.05)",
+        gridcolor=t['border'],
+        zerolinecolor=t['border'],
     )
 
     return fig
@@ -1287,14 +1331,14 @@ def buat_chart_fundamental(data: dict, nama: str) -> go.Figure:
 
     fig.update_layout(
         title=f"📊 Snapshot Fundamental {nama}",
-        title_font=dict(size=16, color="#e0e0ff"),
+        title_font=dict(size=16, color=t['text_main']),
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
-        font=dict(color="#b8b8d0", family="Inter"),
+        font=dict(color=t['text_sub'], family="Public Sans"),
         height=400,
         margin=dict(l=10, r=10, t=60, b=10),
         showlegend=False,
-        yaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.05)"),
+        yaxis=dict(showgrid=True, gridcolor=t['border']),
         xaxis=dict(showgrid=False),
     )
 
@@ -1317,17 +1361,18 @@ def buat_gauge_chart(skor: int, label: str, title: str) -> go.Figure:
     fig = go.Figure(go.Indicator(
         mode="gauge+number",
         value=skor,
-        title=dict(text=title, font=dict(size=14, color="#e0e0ff")),
-        number=dict(font=dict(size=36, color="#e0e0ff")),
+        title=dict(text=title, font=dict(size=14, color=t['text_main'])),
+        number=dict(font=dict(size=36, color=t['accent'])),
         gauge=dict(
-            axis=dict(range=[0, 100], tickcolor="#666", tickfont=dict(color="#888")),
+            axis=dict(range=[0, 100], tickcolor=t['text_sub'], tickfont=dict(color=t['text_sub'])),
             bar=dict(color=bar_color, thickness=0.3),
-            bgcolor="rgba(255,255,255,0.05)",
-            borderwidth=0,
+            bgcolor="rgba(0,0,0,0)",
+            borderwidth=1,
+            bordercolor=t['border'],
             steps=[
-                dict(range=[0, 30], color="rgba(74, 222, 128, 0.15)"),
-                dict(range=[30, 60], color="rgba(251, 191, 36, 0.15)"),
-                dict(range=[60, 100], color="rgba(248, 113, 113, 0.15)"),
+                dict(range=[0, 30], color="rgba(74, 222, 128, 0.1)"),
+                dict(range=[30, 60], color="rgba(251, 191, 36, 0.1)"),
+                dict(range=[60, 100], color="rgba(248, 113, 113, 0.1)"),
             ],
         ),
     ))
@@ -1336,7 +1381,7 @@ def buat_gauge_chart(skor: int, label: str, title: str) -> go.Figure:
         height=250,
         margin=dict(l=30, r=30, t=50, b=10),
         paper_bgcolor="rgba(0,0,0,0)",
-        font=dict(family="Inter"),
+        font=dict(family="Public Sans", color=t['text_main']),
     )
 
     return fig
@@ -1528,15 +1573,16 @@ def main():
         st.markdown("# 📊 Analisa Saham")
         st.markdown("##### *Filosofi Warren Buffett*")
         st.markdown("---")
-
-        st.markdown("### 🌍 Pasar (Market)")
-        pasar_pilihan = st.radio(
-            "Pilih Pasar Saham",
-            options=["🇮🇩 IDX (Indonesia)", "🇺🇸 US (Amerika Serikat)", "🌕 Crypto (Digital Assets)"],
-            index=0,
-            horizontal=True
+        st.markdown("### 🎨 Tampilan (Theme)")
+        theme_pilihan = st.selectbox(
+            "Pilih Mode Tampilan",
+            options=["Dark Mode", "Light Mode"],
+            index=0 if st.session_state["theme"] == "Dark Mode" else 1,
+            key="theme_selector"
         )
-        kode_pasar = "IDX" if "IDX" in pasar_pilihan else ("US" if "US" in pasar_pilihan else "Crypto")
+        if theme_pilihan != st.session_state["theme"]:
+            st.session_state["theme"] = theme_pilihan
+            st.rerun()
 
         st.markdown("---")
         st.markdown("### 🔍 Input Saham/Koin")
@@ -1622,9 +1668,11 @@ def main():
     # ------------------------------------------------------------------
     st.markdown(f"""
     <div class="hero-box">
-        <div class="accuracy-tag">⚡ Data Accuracy: 99.99% Precision</div>
+        <div style="display: inline-block; background: rgba(56, 189, 248, 0.1); color: var(--accent); padding: 0.3rem 0.8rem; border-radius: 50px; font-size: 0.8rem; font-weight: 600; margin-bottom: 1rem;">
+            ⚡ Data Accuracy: 99.99% Precision
+        </div>
         <h1>🌌 Grand Master Hybrid Pro Suite</h1>
-        <p>Expert-Grade Fundamental Insight & Professional Technical Tools (Buffett Edition)</p>
+        <p style="color: var(--text-sub); margin-top: 5px;">Expert-Grade Fundamental Insight & Professional Technical Tools (Buffett Edition)</p>
     </div>
     """, unsafe_allow_html=True)
 
