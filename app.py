@@ -1698,7 +1698,27 @@ def main():
     data = None
     integrity = 100
     nama_saham = "N/A"
+    harga_sekarang = None
+    prev_close = None
+    market_cap = None
+    currency = "IDR"
+    sector = "N/A"
+    industry = "N/A"
     is_crypto = False
+    perubahan = None
+    persen_perubahan = None
+    skor_fund_final = 50
+    skor_teknik = 50
+    reasons_teknik = []
+    power_score = 50
+    rekomendasi = {"aksi": "TUNGGU", "icon": "⏳", "penjelasan": "Menunggu input...", "kelas": "neutral"}
+    prospek = {"label": "N/A", "confidence": "N/A", "signals": []}
+    skor_fund = 0
+    label_fund = "N/A"
+    skor_val = 0
+    label_val = "N/A"
+    graham = None
+    dcf_val = None
 
     if kode_saham:
         ticker_sym = get_ticker_symbol(kode_saham, kode_pasar)
@@ -1737,81 +1757,81 @@ def main():
             st.markdown(f'<div class="section-title">📋 Informasi Umum — {nama_saham}</div>',
                         unsafe_allow_html=True)
 
-        col1, col2, col3, col4 = st.columns(4)
+            col1, col2, col3, col4 = st.columns(4)
 
-        with col1:
-            change_class = "good" if (perubahan and perubahan >= 0) else "bad"
-            change_text = f"+{persen_perubahan:.2f}%" if (persen_perubahan and persen_perubahan >= 0) else f"{persen_perubahan:.2f}%" if persen_perubahan else ""
-            val_str = f"{harga_sekarang:,.0f}" if currency == "IDR" else f"${harga_sekarang:,.2f}" if harga_sekarang else "N/A"
-            render_metric_card("💰 Harga Saat Ini", val_str, change_class, f"Perubahan: {change_text}")
+            with col1:
+                change_class = "good" if (perubahan and perubahan >= 0) else "bad"
+                change_text = f"+{persen_perubahan:.2f}%" if (persen_perubahan and persen_perubahan >= 0) else f"{persen_perubahan:.2f}%" if persen_perubahan else ""
+                val_str = f"{harga_sekarang:,.0f}" if currency == "IDR" else f"${harga_sekarang:,.2f}" if harga_sekarang else "N/A"
+                render_metric_card("💰 Harga Saat Ini", val_str, change_class, f"Perubahan: {change_text}")
 
-        with col2:
-            mc_str = format_mata_uang(market_cap, currency) if market_cap else "N/A"
-            label_mc = "🏢 Market Cap" if not is_crypto else "📊 Market Cap (Crypto)"
-            render_metric_card(label_mc, mc_str, "neutral", f"Sektor: {sector}" if not is_crypto else "Network Asset")
+            with col2:
+                mc_str = format_mata_uang(market_cap, currency) if market_cap else "N/A"
+                label_mc = "🏢 Market Cap" if not is_crypto else "📊 Market Cap (Crypto)"
+                render_metric_card(label_mc, mc_str, "neutral", f"Sektor: {sector}" if not is_crypto else "Network Asset")
 
-        with col3:
-            label_ind = "🏭 Industri" if not is_crypto else "🌐 Exchange/Source"
-            val_ind = industry if not is_crypto else info.get('exchange', 'N/A')
-            render_metric_card(label_ind, val_ind[:25] if len(str(val_ind)) > 25 else val_ind,
-                               "neutral", f"Bursa: {info.get('exchange', 'N/A')}" if not is_crypto else "Digital Asset")
+            with col3:
+                label_ind = "🏭 Industri" if not is_crypto else "🌐 Exchange/Source"
+                val_ind = industry if not is_crypto else info.get('exchange', 'N/A')
+                render_metric_card(label_ind, val_ind[:25] if len(str(val_ind)) > 25 else val_ind,
+                                   "neutral", f"Bursa: {info.get('exchange', 'N/A')}" if not is_crypto else "Digital Asset")
 
-        with col4:
-            fifty_two_high = info.get("fiftyTwoWeekHigh")
-            fifty_two_low = info.get("fiftyTwoWeekLow")
-            range_str = "N/A"
-            if fifty_two_low and fifty_two_high:
-                if currency == "IDR":
-                    range_str = f"{fifty_two_low:,.0f} - {fifty_two_high:,.0f}"
-                else:
-                    range_str = f"${fifty_two_low:,.2f} - ${fifty_two_high:,.2f}"
-            render_metric_card("📊 Range 52 Minggu", range_str, "neutral", "Harga tertinggi & terendah setahun")
+            with col4:
+                fifty_two_high = info.get("fiftyTwoWeekHigh")
+                fifty_two_low = info.get("fiftyTwoWeekLow")
+                range_str = "N/A"
+                if fifty_two_low and fifty_two_high:
+                    if currency == "IDR":
+                        range_str = f"{fifty_two_low:,.0f} - {fifty_two_high:,.0f}"
+                    else:
+                        range_str = f"${fifty_two_low:,.2f} - ${fifty_two_high:,.2f}"
+                render_metric_card("📊 Range 52 Minggu", range_str, "neutral", "Harga tertinggi & terendah setahun")
 
-        # ------------------------------------------------------------------
-        # TOMBOL BELI / SIMULASI
-        # ------------------------------------------------------------------
-        with st.expander("➕ Tambahkan ke Portfolio Saya", expanded=False):
-            col_b1, col_b2, col_b3 = st.columns([1,1,1])
-            with col_b1:
-                input_harga = st.number_input("Harga Beli", value=float(harga_sekarang) if harga_sekarang else 0.0)
-            with col_b2:
-                input_jumlah = st.number_input("Jumlah (Lot untuk IDX / Lembar untuk US)", min_value=1, value=1)
-            with col_b3:
-                st.markdown("<br>", unsafe_allow_html=True)
-                if st.button("💾 Simpan ke Portfolio", type="primary", width='stretch'):
-                    tambah_ke_portfolio(ticker_sym, nama_saham, input_harga, input_jumlah, kode_pasar)
-                    st.success(f"Berhasil menambahkan {nama_saham} ke portfolio!")
-                    time.sleep(1)
-                    st.rerun()
+            # ------------------------------------------------------------------
+            # TOMBOL BELI / SIMULASI
+            # ------------------------------------------------------------------
+            with st.expander("➕ Tambahkan ke Portfolio Saya", expanded=False):
+                col_b1, col_b2, col_b3 = st.columns([1,1,1])
+                with col_b1:
+                    input_harga = st.number_input("Harga Beli", value=float(harga_sekarang) if harga_sekarang else 0.0)
+                with col_b2:
+                    input_jumlah = st.number_input("Jumlah (Lot untuk IDX / Lembar untuk US)", min_value=1, value=1)
+                with col_b3:
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    if st.button("💾 Simpan ke Portfolio", type="primary", width='stretch'):
+                        tambah_ke_portfolio(ticker_sym, nama_saham, input_harga, input_jumlah, kode_pasar)
+                        st.success(f"Berhasil menambahkan {nama_saham} ke portfolio!")
+                        time.sleep(1)
+                        st.rerun()
 
-        # ------------------------------------------------------------------
-        # HITUNG SEMUA METRIK (HYBRID)
-        # ------------------------------------------------------------------
-        # 1. Fundamental
-        if not is_crypto:
-            roe = hitung_roe(data)
-            der = hitung_der(data)
-            cr = hitung_current_ratio(data)
-            eg_data = hitung_earnings_growth(data)
-            npm = hitung_npm(data)
-            per = hitung_per(data)
-            pbv = hitung_pbv(data)
-            dy = hitung_dividend_yield(data)
-            graham = hitung_graham_number(data)
+            # ------------------------------------------------------------------
+            # HITUNG SEMUA METRIK (HYBRID)
+            # ------------------------------------------------------------------
+            # 1. Fundamental
+            if not is_crypto:
+                roe = hitung_roe(data)
+                der = hitung_der(data)
+                cr = hitung_current_ratio(data)
+                eg_data = hitung_earnings_growth(data)
+                npm = hitung_npm(data)
+                per = hitung_per(data)
+                pbv = hitung_pbv(data)
+                dy = hitung_dividend_yield(data)
+                graham = hitung_graham_number(data)
 
-            skor_fund, label_fund, detail_fund = hitung_skor_kualitas(roe, der, cr, eg_data, npm)
-            skor_val, label_val, detail_val = hitung_skor_valuasi(per, pbv, dy, graham, harga_sekarang)
-            # Normalisasi Fund Score: (Kualitas - Valuasi) diubah ke skala 0-100
-            skor_fund_final = max(0, min(100, (skor_fund - skor_val + 100) / 2))
-            
-            # Pro Mode Metrics
-            dcf_val = None
-            if st.session_state.get("pro_mode", False):
-                dr = 0.12 if kode_pasar == "IDX" else 0.10
-                dcf_val = hitung_dcf_simple(data, dr)
+                skor_fund, label_fund, detail_fund = hitung_skor_kualitas(roe, der, cr, eg_data, npm)
+                skor_val, label_val, detail_val = hitung_skor_valuasi(per, pbv, dy, graham, harga_sekarang)
+                # Normalisasi Fund Score: (Kualitas - Valuasi) diubah ke skala 0-100
+                skor_fund_final = max(0, min(100, (skor_fund - skor_val + 100) / 2))
+                
+                # Pro Mode Metrics
+                dcf_val = None
+                if st.session_state.get("pro_mode", False):
+                    dr = 0.12 if kode_pasar == "IDX" else 0.10
+                    dcf_val = hitung_dcf_simple(data, dr)
 
-            # Tambahkan prospek ke depan
-            prospek = buat_prospek(eg_data, der, roe, npm)
+                # Tambahkan prospek ke depan
+                prospek = buat_prospek(eg_data, der, roe, npm)
         else:
             # Crypto Fundamental Logic (Market Cap & Supply)
             ath = info.get("allTimeHigh")
