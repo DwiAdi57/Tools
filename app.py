@@ -1705,23 +1705,24 @@ def main():
         # Using a slight delay to ensure UI consistency
         data = ambil_data_saham(ticker_sym)
     
-        info = data["info"]
-        nama_saham = info.get("shortName", info.get("longName", ticker_sym))
-        harga_sekarang = info.get("regularMarketPrice") or info.get("currentPrice")
-        prev_close = info.get("previousClose") or info.get("regularMarketPreviousClose")
-        market_cap = info.get("marketCap")
-        currency = info.get("currency", "IDR")
-        sector = info.get("sector", "N/A")
-        industry = info.get("industry", "N/A")
-        quote_type = info.get("quoteType", "EQUITY")
-        is_crypto = (quote_type == "CRYPTOCURRENCY")
-
-        # Perubahan harga
-        perubahan = None
-        persen_perubahan = None
-        if harga_sekarang and prev_close and prev_close > 0:
-            perubahan = harga_sekarang - prev_close
-            persen_perubahan = (perubahan / prev_close) * 100
+        if data:
+            info = data["info"]
+            nama_saham = info.get("shortName", info.get("longName", ticker_sym))
+            harga_sekarang = info.get("regularMarketPrice") or info.get("currentPrice")
+            prev_close = info.get("previousClose") or info.get("regularMarketPreviousClose")
+            market_cap = info.get("marketCap")
+            currency = info.get("currency", "IDR")
+            sector = info.get("sector", "N/A")
+            industry = info.get("industry", "N/A")
+            quote_type = info.get("quoteType", "EQUITY")
+            is_crypto = (quote_type == "CRYPTOCURRENCY")
+    
+            # Perubahan harga
+            perubahan = None
+            persen_perubahan = None
+            if harga_sekarang and prev_close and prev_close > 0:
+                perubahan = harga_sekarang - prev_close
+                persen_perubahan = (perubahan / prev_close) * 100
 
     with tab1:
         if not kode_saham:
@@ -2369,9 +2370,13 @@ def main():
                     try:
                         # Ambil data melalui cache yang sudah ada
                         data_p = ambil_data_saham(ticker_p)
-                        info_p = data_p["info"]
-                        curr_p = info_p.get("regularMarketPrice") or info_p.get("currentPrice")
-                        nama_p = info_p.get("shortName", row["Nama"])
+                        if data_p:
+                            info_p = data_p["info"]
+                            curr_p = info_p.get("regularMarketPrice") or info_p.get("currentPrice")
+                            nama_p = info_p.get("shortName", row["Nama"])
+                        else:
+                            curr_p = row["Harga Beli"]
+                            nama_p = row["Nama"]
                     except Exception:
                         curr_p = row["Harga Beli"]
                         nama_p = row["Nama"]
