@@ -1585,6 +1585,16 @@ def main():
             st.rerun()
 
         st.markdown("---")
+        st.markdown("### 🌍 Pasar (Market)")
+        pasar_pilihan = st.radio(
+            "Pilih Pasar Saham",
+            options=["🇮🇩 IDX (Indonesia)", "🇺🇸 US (Amerika Serikat)", "🌕 Crypto (Digital Assets)"],
+            index=0,
+            horizontal=True
+        )
+        kode_pasar = "IDX" if "IDX" in pasar_pilihan else ("US" if "US" in pasar_pilihan else "Crypto")
+
+        st.markdown("---")
         st.markdown("### 🔍 Input Saham/Koin")
         kode_saham = st.text_input(
             "Kode Saham / Kripto",
