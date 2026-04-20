@@ -229,7 +229,7 @@ st.markdown(f"""
     .score-badge.yellow {{ background: rgba(245, 158, 11, 0.15); color: #f59e0b; }}
 
 </style>
-, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
 
 # =====================================================================
