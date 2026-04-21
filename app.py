@@ -30,7 +30,7 @@ warnings.filterwarnings("ignore")
 # KONFIGURASI HALAMAN
 # =====================================================================
 st.set_page_config(
-    page_title="Analisa Saham MERCY-BAJAI",
+    page_title="Analisa Saham",
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -112,8 +112,7 @@ st.markdown(f"""
         color: var(--text-main) !important;
     }}
 
-    /* === GLASSMORPHISM CARDS === */
-    .metric-card, .rekom-box, .explain-box {{
+    .metric-card, .rekom-box {{
         background: var(--bg-card) !important;
         backdrop-filter: blur(16px) saturate(180%) !important;
         border: 1px solid var(--border) !important;
@@ -126,12 +125,20 @@ st.markdown(f"""
         flex-direction: column;
         justify-content: center;
     }}
+
+    .explain-box {{
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 16px !important;
+        padding: 1.25rem !important;
+        margin-top: 1rem;
+        color: var(--text-main);
+        line-height: 1.6;
+        font-size: 0.9rem;
+    }}
     
-    .metric-card:hover {{
-        transform: translateY(-4px);
-        border-color: var(--accent) !important;
-        background: rgba(255,255,255,0.03) !important;
-        box-shadow: 0 12px 40px rgba(0,0,0,0.3) !important;
+    .explain-box strong {{
+        color: var(--accent);
     }}
 
     /* === RESPONSIVE LAYOUT FIXES === */
@@ -440,28 +447,33 @@ def ambil_data_saham(ticker_symbol: str) -> dict:
             hist_5y = ticker.history(period="5y")
 
             # Ambil financial statements (dengan error handling per item)
-            financials = pd.DataFrame()
-            balance_sheet = pd.DataFrame()
-            income_stmt = pd.DataFrame()
-            cash_flow = pd.DataFrame()
-
-            try: financials = ticker.financials
-            except: pass
             try: balance_sheet = ticker.balance_sheet
-            except: pass
+            except: balance_sheet = pd.DataFrame()
+            
             try: income_stmt = ticker.income_stmt
-            except: pass
+            except: income_stmt = pd.DataFrame()
+            
             try: cash_flow = ticker.cashflow
-            except: pass
+            except: cash_flow = pd.DataFrame()
+
+            # Ambil berita & dividen
+            news = []
+            try: news = ticker.news
+            except: news = []
+            
+            divs = pd.Series()
+            try: divs = ticker.dividends
+            except: divs = pd.Series()
 
             return {
                 "info": info,
                 "hist_1y": hist_1y,
                 "hist_5y": hist_5y,
-                "financials": financials,
                 "balance_sheet": balance_sheet,
                 "income_stmt": income_stmt,
-                "cash_flow": cash_flow
+                "cash_flow": cash_flow,
+                "news": news,
+                "dividends": divs
             }
 
         except Exception as e:
@@ -478,43 +490,121 @@ def ambil_data_saham(ticker_symbol: str) -> dict:
     return None
 
 
-def hitung_roe(data: dict) -> float:
-    """Hitung ROE dari data yfinance."""
-    info = data["info"]
-    # Coba dari info langsung
-    roe = info.get("returnOnEquity")
-    if roe is not None:
-        return roe * 100  # konversi ke persen
-    # Coba hitung manual dari financial statements
+def normalisasi_persen(val) -> float:
+    """
+    Menormalkan nilai persentase dari yfinance.
+    Tujuan: Menghindari bug 519% (harusnya 5.19%).
+    Aturan: 
+    - Jika val > 1.5, asumsikan itu SANGAT mungkin sudah dalam persen (misal 5.5 = 5.5%).
+    - Jika val < 0.15, asumsikan itu kemungkinan desimal (misal 0.055 = 5.5%).
+    - Batas 0.15 - 1.5 adalah area abu-abu, kita asumsikan desimal untuk amannya.
+    """
+    if val is None: return None
     try:
-        income = data["income_stmt"]
-        bs = data["balance_sheet"]
-        if not income.empty and not bs.empty:
-            net_income = income.iloc[0].get("Net Income", None)
-            equity = bs.iloc[0].get("Stockholders Equity", None) or bs.iloc[0].get("Total Stockholder Equity", None)
-            if net_income and equity and equity != 0:
-                return (net_income / equity) * 100
-    except Exception:
-        pass
-    return None
+        val = float(val)
+        if abs(val) > 1.5:
+            return val # Sudah dalam persen
+        else:
+            return val * 100 # Konversi desimal ke persen
+    except: return None
 
+def hitung_roe(data: dict) -> float:
+    """Hitung ROE dari data yfinance dengan fallback manual."""
+    info = data["info"]
+    roe = info.get("returnOnEquity")
+    
+    # Jika dari info ada, normalisasi
+    if roe is not None:
+        return normalisasi_persen(roe)
+        
+    # Fallback hitung manual
+    try:
+        inc = data["income_stmt"]
+        bs = data["balance_sheet"]
+        if not inc.empty and not bs.empty:
+            ni = inc.iloc[0].get("Net Income")
+            equity = bs.iloc[0].get("Stockholders Equity") or bs.iloc[0].get("Common Stock Equity")
+            if ni and equity:
+                return (ni / equity) * 100
+    except: pass
+    return None
 
 def hitung_der(data: dict) -> float:
-    """Hitung Debt to Equity Ratio."""
+    """Hitung Debt to Equity Ratio dengan fallback manual."""
     info = data["info"]
     der = info.get("debtToEquity")
+    
     if der is not None:
-        return der / 100 if der > 10 else der  # Normalisasi, kadang yfinance return dalam persen
-    return None
+        # yfinance DER sering kali dalam persen (contoh 120.5 untuk 1.20)
+        return der / 100 if der > 3 else der
 
+    # Fallback hitung manual
+    try:
+        bs = data["balance_sheet"]
+        if not bs.empty:
+            debt = bs.iloc[0].get("Total Debt")
+            equity = bs.iloc[0].get("Stockholders Equity") or bs.iloc[0].get("Common Stock Equity")
+            if debt and equity:
+                return debt / equity
+    except: pass
+    return None
 
 def hitung_current_ratio(data: dict) -> float:
-    """Hitung Current Ratio."""
+    """Hitung Current Ratio dengan fallback manual."""
     info = data["info"]
     cr = info.get("currentRatio")
-    if cr is not None:
-        return cr
+    if cr is not None: return cr
+    
+    try:
+        bs = data["balance_sheet"]
+        if not bs.empty:
+            ca = bs.iloc[0].get("Total Current Assets")
+            cl = bs.iloc[0].get("Total Current Liabilities")
+            if ca and cl:
+                return ca / cl
+    except: pass
     return None
+
+def hitung_npm(data: dict) -> float:
+    """Hitung Net Profit Margin."""
+    info = data["info"]
+    npm = info.get("profitMargins")
+    if npm is not None: return normalisasi_persen(npm)
+    
+    try:
+        inc = data["income_stmt"]
+        if not inc.empty:
+            ni = inc.iloc[0].get("Net Income")
+            rev = inc.iloc[0].get("Total Revenue")
+            if ni and rev:
+                return (ni / rev) * 100
+    except: pass
+    return None
+
+def get_bank_metrics(data: dict) -> dict:
+    """
+    Menghitung metrik spesifik perbankan (LDR, NI/Asset Proxy).
+    """
+    bs = data["balance_sheet"]
+    inc = data["income_stmt"]
+    metrics = {"LDR": None, "BankProfitability": None}
+    
+    try:
+        if not bs.empty:
+            # LDR Proxy: Total Loans / Total Deposits (Names vary in yf)
+            loans = bs.iloc[0].get("Gross Loans") or bs.iloc[0].get("Net Loans")
+            deposits = bs.iloc[0].get("Total Deposits")
+            if loans and deposits:
+                metrics["LDR"] = (loans / deposits) * 100
+            
+            # Asset Profitability Proxy (NI / Total Assets)
+            if not inc.empty:
+                ni = inc.iloc[0].get("Net Income")
+                assets = bs.iloc[0].get("Total Assets")
+                if ni and assets:
+                    metrics["BankProfitability"] = (ni / assets) * 100
+    except: pass
+    return metrics
 
 
 def hitung_earnings_growth(data: dict) -> dict:
@@ -590,47 +680,86 @@ def hitung_npm(data: dict) -> float:
     return None
 
 
-def hitung_per(data: dict) -> float:
-    """Hitung PER (Price to Earnings Ratio)."""
+def hitung_per(data: dict) -> dict:
+    """Hitung PER (Price to Earnings Ratio) - Trailing & Forward."""
     info = data["info"]
-    per = info.get("trailingPE") or info.get("forwardPE")
-    if per is not None:
-        return per
-    return None
-
+    return {
+        "trailing": info.get("trailingPE"),
+        "forward": info.get("forwardPE")
+    }
 
 def hitung_pbv(data: dict) -> float:
-    """Hitung PBV (Price to Book Value)."""
+    """Hitung PBV (Price to Book Value) dengan fallback manual."""
     info = data["info"]
     pbv = info.get("priceToBook")
-    if pbv is not None:
-        return pbv
+    if pbv is not None: return pbv
+    
+    try:
+        price = info.get("currentPrice") or info.get("regularMarketPrice")
+        bvps = info.get("bookValue")
+        if price and bvps and bvps != 0:
+            return price / bvps
+    except: pass
     return None
-
 
 def hitung_dividend_yield(data: dict) -> float:
-    """Hitung Dividend Yield dalam persen."""
+    """Hitung Dividend Yield dalam persen dengan normalisasi."""
     info = data["info"]
     dy = info.get("dividendYield") or info.get("trailingAnnualDividendYield")
-    if dy is not None:
-        return dy * 100
-    return None
-
+    return normalisasi_persen(dy)
 
 def hitung_graham_number(data: dict) -> float:
     """
     Hitung Graham Number = sqrt(22.5 * EPS * BVPS).
-    Refined: Handles negative values to avoid math errors.
+     handles manual derivation if keys are missing.
     """
     info = data.get("info", {})
     eps = info.get("trailingEps")
     bvps = info.get("bookValue")
     
-    if eps is not None and bvps is not None:
-        # Graham's criteria usually requires positive EPS and BVPS
+    # Fallback EPS
+    if eps is None:
+        try:
+            inc = data["income_stmt"]
+            shares = info.get("sharesOutstanding")
+            if not inc.empty and shares:
+                eps = inc.iloc[0].get("Net Income") / shares
+        except: pass
+
+    if eps and bvps:
         if eps > 0 and bvps > 0:
             return (22.5 * eps * bvps) ** 0.5
     return None
+
+def get_valuation_comparison(data: dict) -> dict:
+    """
+    Menganalisa perbedaan antara Trailing dan Forward data.
+    """
+    info = data["info"]
+    t_pe = info.get("trailingPE")
+    f_pe = info.get("forwardPE")
+    t_eps = info.get("trailingEps")
+    f_eps = info.get("forwardEps")
+    
+    issues = []
+    if t_pe and f_pe:
+        if f_pe > t_pe * 1.2:
+            issues.append("⚠️ Forward PER lebih tinggi: Ada ekspektasi penurunan laba ke depan.")
+        elif f_pe < t_pe * 0.8:
+            issues.append("🚀 Forward PER lebih rendah: Analis memproyeksikan pertumbuhan laba yang kuat.")
+            
+    if t_eps and f_eps:
+        if f_eps < t_eps:
+            issues.append(f"📉 Proyeksi EPS Menurun: Dari {t_eps:.2f} ke {f_eps:.2f}.")
+
+    return {
+        "trailing_pe": t_pe,
+        "forward_pe": f_pe,
+        "trailing_eps": t_eps,
+        "forward_eps": f_eps,
+        "is_issues": len(issues) > 0,
+        "issues_text": "\n".join(issues)
+    }
 
 def hitung_dcf_simple(data: dict, discount_rate: float = 0.12) -> float:
     """
@@ -792,17 +921,25 @@ def hitung_skor_kualitas(roe, der, cr, eg_data, npm) -> tuple:
     return skor, label, detail
 
 
-def hitung_skor_valuasi(per, pbv, dy, graham, harga_sekarang) -> tuple:
+def hitung_skor_valuasi(per_data, pbv, dy, graham, harga_sekarang) -> tuple:
     """
     Hitung skor valuasi (0-100). Semakin RENDAH skor, semakin MURAH.
+    per_data: dict {"trailing": x, "forward": y} or float or None
     Returns: (skor, label, detail_dict)
     """
     skor = 0
     detail = {}
     count = 0
 
-    # PER (bobot: 30) — semakin rendah semakin bagus, skor = mahal
-    if per is not None and per > 0:
+    # Extract PER value
+    per = None
+    if isinstance(per_data, dict):
+        per = per_data.get("trailing") or per_data.get("forward")
+    else:
+        per = per_data
+
+    # PER (bobot: 30) — semakin rendah semakin bagus
+    if per is not None and isinstance(per, (int, float)) and per > 0:
         count += 1
         if per < 8:
             s = 5   # sangat murah
@@ -1702,8 +1839,8 @@ def main():
         <div style="display: inline-block; background: rgba(56, 189, 248, 0.1); color: var(--accent); padding: 0.3rem 0.8rem; border-radius: 50px; font-size: 0.8rem; font-weight: 600; margin-bottom: 1rem;">
             ⚡ Data Accuracy: 99.99% Precision
         </div>
-        <h1>🌌 Grand Master Hybrid Pro Suite</h1>
-        <p style="color: var(--text-sub); margin-top: 5px;">Expert-Grade Fundamental Insight & Professional Technical Tools (Buffett Edition)</p>
+        <h1>🌌 Analisa Saham</h1>
+        <p style="color: var(--text-sub); margin-top: 5px;">Expert-Grade Fundamental Insight & Professional Technical Tools (Premium Edition)</p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -1947,14 +2084,16 @@ def main():
                         st.plotly_chart(fig_drop, width='stretch')
 
             if show_explanation:
-                st.markdown("""
+                st.markdown(f"""
                 <div class="explain-box">
-                <strong>📖 Cara Baca Rekomendasi:</strong><br>
-                • <strong>Skor Kualitas</strong>: Mengukur seberapa bagus perusahaan (ROE, utang, laba, dll). Makin tinggi makin bagus.<br>
-                • <strong>Skor Valuasi</strong>: Mengukur seberapa mahal harganya. Makin RENDAH skor valuasi, makin MURAH.<br>
-                • <strong>BELI</strong>: Perusahaan bagus + harga murah = "MERCY harga BAJAI" 🏆<br>
-                • <strong>TAHAN</strong>: Perusahaan bagus tapi harga wajar/agak mahal<br>
-                • <strong>JUAL</strong>: Perusahaan kurang bagus atau harga terlalu mahal
+                    <p style="margin-bottom:10px; font-weight:700;">📖 Cara Baca Rekomendasi:</p>
+                    <ul style="margin:0; padding-left:20px;">
+                        <li><strong>Skor Kualitas</strong>: Mengukur fundamental perusahaan (ROE, utang, laba). Makin tinggi makin bagus ( Mercedes-Grade).</li>
+                        <li><strong>Skor Valuasi</strong>: Mengukur kemurahan harga. Makin rendah skor, makin MURAH ( Bajaj-Price).</li>
+                        <li><strong>BELI</strong>: Perusahaan bagus + harga murah = <strong>"MERCY harga BAJAI"</strong> 🏆</li>
+                        <li><strong>TAHAN</strong>: Perusahaan bagus tapi harga sudah wajar atau sedikit mahal.</li>
+                        <li><strong>JUAL</strong>: Perusahaan kurang sehat atau harga sudah terlalu tinggi di atas nilai wajarnya.</li>
+                    </ul>
                 </div>
                 """, unsafe_allow_html=True)
 
@@ -2017,6 +2156,9 @@ def main():
                 # ------------------------------------------------------------------
                 st.markdown(f'<div class="section-title">🏅 Screening Kualitas Perusahaan</div>', unsafe_allow_html=True)
 
+                is_bank = "Bank" in sector or "Bank" in industry
+                bank_m = get_bank_metrics(data) if is_bank else {}
+
                 col_q1, col_q2, col_q3, col_q4, col_q5 = st.columns(5)
 
                 with col_q1:
@@ -2027,18 +2169,30 @@ def main():
                         st.markdown(f'<div class="explain-box">{PENJELASAN.get("ROE", "")}</div>', unsafe_allow_html=True)
 
                 with col_q2:
-                    status_der = "good" if (der is not None and der <= 0.5) else ("neutral" if (der is not None and der <= 1.0) else "bad")
-                    val_der = f"{der:.2f}x" if der is not None else "N/A"
-                    render_metric_card("DER", val_der, status_der, "Target: ≤ 0.5x")
+                    if is_bank:
+                        ldr = bank_m.get("LDR")
+                        status_ldr = "good" if (ldr and 78 <= ldr <= 92) else "neutral"
+                        val_ldr = f"{ldr:.1f}%" if ldr else "N/A"
+                        render_metric_card("LDR (Bank)", val_ldr, status_ldr, "Range Sehat: 78-92%")
+                    else:
+                        status_der = "good" if (der is not None and der <= 0.5) else ("neutral" if (der is not None and der <= 1.0) else "bad")
+                        val_der = f"{der:.2f}x" if der is not None else "N/A"
+                        render_metric_card("DER", val_der, status_der, "Target: ≤ 0.5x")
                     if show_explanation:
-                        st.markdown(f'<div class="explain-box">{PENJELASAN.get("DER", "")}</div>', unsafe_allow_html=True)
+                        st.markdown(f'<div class="explain-box">{PENJELASAN.get("DER", "") if not is_bank else "LDR: Pinjaman dibanding Simpanan. Mengukur kesehatan likuiditas bank."}</div>', unsafe_allow_html=True)
 
                 with col_q3:
-                    status_cr = "good" if (cr and cr >= 1.5) else ("neutral" if (cr and cr >= 1.0) else "bad")
-                    val_cr = f"{cr:.2f}x" if cr is not None else "N/A"
-                    render_metric_card("Current Ratio", val_cr, status_cr, "Target: ≥ 1.5x")
+                    if is_bank:
+                        profit_p = bank_m.get("BankProfitability")
+                        status_p = "good" if (profit_p and profit_p > 1.5) else "neutral"
+                        val_p = f"{profit_p:.2f}%" if profit_p else "N/A"
+                        render_metric_card("NI/Asset (Bank)", val_p, status_p, "Target: > 1.5%")
+                    else:
+                        status_cr = "good" if (cr and cr >= 1.5) else ("neutral" if (cr and cr >= 1.0) else "bad")
+                        val_cr = f"{cr:.2f}x" if cr is not None else "N/A"
+                        render_metric_card("Current Ratio", val_cr, status_cr, "Target: ≥ 1.5x")
                     if show_explanation:
-                        st.markdown(f'<div class="explain-box">{PENJELASAN.get("CR", "")}</div>', unsafe_allow_html=True)
+                        st.markdown(f'<div class="explain-box">{PENJELASAN.get("CR", "") if not is_bank else "NI/Assets: Laba dibanding aset. Efisiensi bank mengelola modal."}</div>', unsafe_allow_html=True)
 
                 with col_q4:
                     if eg_data:
@@ -2058,7 +2212,7 @@ def main():
                     val_npm = f"{npm:.1f}%" if npm is not None else "N/A"
                     render_metric_card("Net Profit Margin", val_npm, status_npm, "Target: ≥ 10%")
                     if show_explanation:
-                        st.markdown(f'<div class="explain-box">{PENJELASAN["NPM"]}</div>', unsafe_allow_html=True)
+                        st.markdown(f'<div class="explain-box">{PENJELASAN.get("NPM", "")}</div>', unsafe_allow_html=True)
             else:
                 # ------------------------------------------------------------------
                 # SCREENING KRIPTO (Detail)
@@ -2091,15 +2245,18 @@ def main():
                 # ------------------------------------------------------------------
                 st.markdown(f'<div class="section-title">💰 Screening Valuasi (Harga Murah?)</div>', unsafe_allow_html=True)
 
+                val_comp = get_valuation_comparison(data)
                 col_v1, col_v2, col_v3, col_v4 = st.columns(4)
 
                 with col_v1:
-                    status_per = "good" if (per and per < 15) else ("neutral" if (per and per < 25) else "bad")
-                    val_per = f"{per:.1f}x" if per is not None else "N/A"
-                    murah_per = "Sangat Murah! 🔥" if (per and per < 10) else ("Murah ✅" if (per and per < 15) else ("Wajar" if (per and per < 25) else "Mahal ⚠️"))
-                    render_metric_card("PER", val_per, status_per, murah_per)
+                    t_pe = val_comp["trailing_pe"]
+                    f_pe = val_comp["forward_pe"]
+                    status_per = "good" if (t_pe and t_pe < 15) else ("neutral" if (t_pe and t_pe < 25) else "bad")
+                    val_per = f"{t_pe:.1f}x" if t_pe else "N/A"
+                    label_per = f"Forward: {f_pe:.1f}x" if f_pe else "N/A"
+                    render_metric_card("PER (Trailing)", val_per, status_per, label_per)
                     if show_explanation:
-                        st.markdown(f'<div class="explain-box">{PENJELASAN["PER"]}</div>', unsafe_allow_html=True)
+                        st.markdown(f'<div class="explain-box">{PENJELASAN.get("PER", "")}</div>', unsafe_allow_html=True)
 
                 with col_v2:
                     status_pbv = "good" if (pbv and pbv < 1.5) else ("neutral" if (pbv and pbv < 3) else "bad")
@@ -2107,15 +2264,15 @@ def main():
                     murah_pbv = "Sangat Murah! 🔥" if (pbv and pbv < 1) else ("Murah ✅" if (pbv and pbv < 1.5) else ("Wajar" if (pbv and pbv < 3) else "Mahal ⚠️"))
                     render_metric_card("PBV", val_pbv, status_pbv, murah_pbv)
                     if show_explanation:
-                        st.markdown(f'<div class="explain-box">{PENJELASAN["PBV"]}</div>', unsafe_allow_html=True)
+                        st.markdown(f'<div class="explain-box">{PENJELASAN.get("PBV", "")}</div>', unsafe_allow_html=True)
 
                 with col_v3:
                     status_dy = "good" if (dy and dy >= 3) else ("neutral" if (dy and dy >= 1) else "bad")
                     val_dy = f"{dy:.2f}%" if dy is not None else "N/A"
-                    menarik_dy = "Sangat Menarik! 🔥" if (dy and dy >= 5) else ("Menarik ✅" if (dy and dy >= 3) else ("Cukup" if (dy and dy >= 1) else "Rendah"))
-                    render_metric_card("Dividend Yield", val_dy, status_dy, menarik_dy)
+                    div_rate = info.get("dividendRate")
+                    render_metric_card("Dividend Yield", val_dy, status_dy, f"Nominal: {currency} {div_rate}" if div_rate else "Cek Detail di Bawah")
                     if show_explanation:
-                        st.markdown(f'<div class="explain-box">{PENJELASAN["DY"]}</div>', unsafe_allow_html=True)
+                        st.markdown(f'<div class="explain-box">{PENJELASAN.get("DY", "")}</div>', unsafe_allow_html=True)
 
                 with col_v4:
                     if graham and harga_sekarang:
@@ -2130,6 +2287,107 @@ def main():
                         render_metric_card("Graham Number", val_graham, status_graham, f"Harga: {val_harga_now} → {label_graham}")
                     else:
                         render_metric_card("Graham Number", "N/A", "neutral", "Data EPS/BVPS tidak tersedia")
+                
+                if val_comp["is_issues"]:
+                    st.warning(val_comp["issues_text"])
+                
+                # ------------------------------------------------------------------
+                # DIVIDEN DETAIL & MARKET SENTIMENT
+                # ------------------------------------------------------------------
+                st.markdown(f'<div class="section-title">📊 Detail Dividen & Isu Pasar (Market Pulse)</div>', unsafe_allow_html=True)
+                col_d1, col_d2 = st.columns([1.2, 1.5])
+                
+                with col_d1:
+                    with st.container(border=True):
+                        st.subheader("💰 Informasi Dividen")
+                        
+                        divs = data.get("dividends", pd.Series())
+                        if not divs.empty:
+                            # Squeeze jika divs adalah DataFrame 1-kolom
+                            if hasattr(divs, 'squeeze'):
+                                divs = divs.squeeze()
+                            
+                            # 5 Distribusi Terakhir
+                            last_5 = divs.tail(5).sort_index(ascending=False)
+                            
+                            # Cek Tahun Berjalan (2026)
+                            current_year = datetime.now().year
+                            divs_curr = divs[divs.index.year == current_year]
+                            # Pastikan total_curr adalah scalar float
+                            total_curr = float(divs_curr.sum()) if not isinstance(divs_curr.sum(), pd.Series) else float(divs_curr.sum().iloc[0])
+                            
+                            st.markdown(f"**Total Dividen Tahun {current_year}:**")
+                            if not divs_curr.empty and total_curr > 0:
+                                st.markdown(f"<div style='font-size:1.5rem; font-weight:800; color:var(--accent);'>{currency} {total_curr:,.1f}</div>", unsafe_allow_html=True)
+                            else:
+                                st.info(f"Belum ada pembagian dividen di tahun {current_year}. (Menunggu Keputusan RUPS)")
+                            
+                            # Histori 5 Pembayaran Terakhir
+                            st.write("**📝 Histori 5 Pembayaran Terakhir:**")
+                            df_divs = pd.DataFrame({
+                                'Tanggal (Ex-Date)': [v for v in last_5.index.strftime('%d %b %Y')],
+                                'Nominal Distribusi': [f"{currency} {float(v):,.1f}" if not isinstance(v, (list, np.ndarray)) else f"{currency} {float(v[0]):,.1f}" for v in last_5.values]
+                            })
+                            st.dataframe(df_divs, use_container_width=True, hide_index=True)
+                            
+                            # TTM Dividend Calculation
+                            one_year_ago = datetime.now() - timedelta(days=365)
+                            # Handle timezone mismatch (divs index is usually TZ-aware)
+                            divs_naive = divs.index.tz_localize(None) if hasattr(divs.index, 'tz_localize') else divs.index
+                            ttm_divs = divs[divs_naive > one_year_ago]
+                            ttm_sum = float(ttm_divs.sum()) if not isinstance(ttm_divs.sum(), pd.Series) else float(ttm_divs.sum().iloc[0])
+                            
+                            st.markdown(f"""
+                            <div style="background:rgba(56,189,248,0.05); padding:10px; border-radius:10px; border-left:4px solid var(--accent); margin-top:10px;">
+                                <small style="color:var(--text-sub);">Estimasi Dividen 12 Bulan Terakhir (TTM):</small><br>
+                                <strong style="font-size:1.1rem; color:var(--text-main);">{currency} {ttm_sum:,.1f} / lembar</strong>
+                            </div>
+                            """, unsafe_allow_html=True)
+
+                            st.markdown("<br>", unsafe_allow_html=True)
+                            yield_val = info.get("dividendYield", 0) * 100
+                            if yield_val == 0 and dy: yield_val = dy # fallback
+                            col_sub1, col_sub2 = st.columns(2)
+                            with col_sub1:
+                                st.metric("Yield Saat Ini", f"{yield_val:.2f}%")
+                            with col_sub2:
+                                st.metric("Payout Ratio", f"{info.get('payoutRatio', 0)*100:.1f}%")
+                        else:
+                            st.info("Emiten ini tidak membagikan dividen dalam periode terakhir.")
+
+                with col_d2:
+                    with st.container(border=True):
+                        st.subheader("📰 Isu-isu Pasar (Terbaru)")
+                        news = data.get("news", [])
+                        if news:
+                            for item in news[:3]:
+                                n_content = item.get('content', {})
+                                title = n_content.get('title', 'No Title')
+                                provider = n_content.get('provider', {}).get('displayName', 'News')
+                                pub_date = n_content.get('pubDate', '')
+                                link = n_content.get('canonicalUrl', {}).get('url', '#')
+                                
+                                st.markdown(f"**[{title}]({link})**")
+                                st.caption(f"{provider} | {pub_date}")
+                            
+                            # Ringkasan Sentimen dalam Bahasa Indonesia
+                            st.markdown("---")
+                            st.markdown("**🔍 Ringkasan Isu Utama (AI Summary):**")
+                            all_titles = " ".join([n.get('content', {}).get('title', '') for n in news[:5]])
+                            summary_text = "⚖️ Sentimen pasar saat ini stabil dan moderat tanpa isu besar yang mendominasi."
+                            
+                            if any(k in all_titles.upper() for k in ["CEO", "MANAGEMENT", "LEADERSHIP"]):
+                                summary_text = "✅ Terdapat isu perubahan manajemen atau kepemimpinan yang sedang diperhatikan pasar."
+                            elif any(k in all_titles.upper() for k in ["BUY", "PROFIT", "GROWTH", "UPGRADE"]):
+                                summary_text = "📈 Sentimen pasar cenderung positif terkait pertumbuhan laba atau rekomendasi analis."
+                            elif any(k in all_titles.upper() for k in ["DROP", "CUT", "LOSS", "DOWNGRADE", "DECLINE"]):
+                                summary_text = "📉 Ada kewaspadaan pasar mengenai penurunan kinerja, pemangkasan target, atau efisiensi."
+                            elif any(k in all_titles.upper() for k in ["ACQUISITION", "MERGER", "EXPANSION"]):
+                                summary_text = "🤝 Terdapat aksi korporasi berupa ekspansi atau akuisisi yang dapat mempengaruhi valuasi."
+                            
+                            st.info(summary_text)
+                        else:
+                            st.info("Tidak ada berita terbaru yang signifikan ditemukan.")
                 
             # DCF Intrinsic Value (Pro Mode Only)
             if st.session_state.get("pro_mode", False):
