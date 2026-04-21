@@ -430,10 +430,14 @@ def ambil_data_saham(ticker_symbol: str) -> dict:
             income_stmt = pd.DataFrame()
             cash_flow = pd.DataFrame()
 
-            try: financials = ticker.financials except: pass
-            try: balance_sheet = ticker.balance_sheet except: pass
-            try: income_stmt = ticker.income_stmt except: pass
-            try: cash_flow = ticker.cashflow except: pass
+            try: financials = ticker.financials
+            except: pass
+            try: balance_sheet = ticker.balance_sheet
+            except: pass
+            try: income_stmt = ticker.income_stmt
+            except: pass
+            try: cash_flow = ticker.cashflow
+            except: pass
 
             return {
                 "info": info,
