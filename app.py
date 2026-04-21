@@ -421,13 +421,15 @@ def ambil_data_saham(ticker_symbol: str) -> dict:
             info = ticker.info or {}
 
             # Cek apakah ticker valid
-            if not info or info.get("regularMarketPrice") is None:
+            price = info.get("currentPrice") or info.get("regularMarketPrice")
+            if not info or price is None:
                 # Coba tanpa .JK jika gagal
                 if ".JK" in ticker_symbol:
                     alt = ticker_symbol.replace(".JK", "")
                     ticker = yf.Ticker(alt)
                     info = ticker.info or {}
-                    if not info or info.get("regularMarketPrice") is None:
+                    price = info.get("currentPrice") or info.get("regularMarketPrice")
+                    if not info or price is None:
                         return None
                     ticker_symbol = alt
                 else:
