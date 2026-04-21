@@ -1832,16 +1832,16 @@ def main():
 
                 # Tambahkan prospek ke depan
                 prospek = buat_prospek(eg_data, der, roe, npm)
-        else:
-            # Crypto Fundamental Logic (Market Cap & Supply)
-            ath = info.get("allTimeHigh")
-            skor_fund_final = 50
-            if ath and harga_sekarang:
-                skor_fund_final = max(0, min(100, (ath - harga_sekarang) / ath * 100))
-            mcap = info.get("marketCap", 0)
-            if mcap > 1e10: skor_fund_final += 20
-            skor_fund_final = min(100, skor_fund_final)
-            # prospek akan didefinisikan setelah power_score di bawah
+            else:
+                # Crypto Fundamental Logic (Market Cap & Supply)
+                ath = info.get("allTimeHigh")
+                skor_fund_final = 50
+                if ath and harga_sekarang:
+                    skor_fund_final = max(0, min(100, (ath - harga_sekarang) / ath * 100))
+                mcap = info.get("marketCap", 0)
+                if mcap > 1e10: skor_fund_final += 20
+                skor_fund_final = min(100, skor_fund_final)
+                # prospek akan didefinisikan setelah power_score di bawah
 
             # 2. Teknikal
             skor_teknik, reasons_teknik, color_teknik = hitung_skor_teknikal(data["hist_1y"])
@@ -2098,17 +2098,17 @@ def main():
 
                 with col_v4:
                     if graham and harga_sekarang:
-                    if currency == "IDR":
-                        val_graham = f"{graham:,.0f}"
-                        val_harga_now = f"{harga_sekarang:,.0f}"
+                        if currency == "IDR":
+                            val_graham = f"{graham:,.0f}"
+                            val_harga_now = f"{harga_sekarang:,.0f}"
+                        else:
+                            val_graham = f"${graham:,.2f}"
+                            val_harga_now = f"${harga_sekarang:,.2f}"
+                        status_graham = "good" if harga_sekarang < graham else "bad"
+                        label_graham = "UNDERVALUED ✅" if harga_sekarang < graham else "OVERVALUED ⚠️"
+                        render_metric_card("Graham Number", val_graham, status_graham, f"Harga: {val_harga_now} → {label_graham}")
                     else:
-                        val_graham = f"${graham:,.2f}"
-                        val_harga_now = f"${harga_sekarang:,.2f}"
-                    status_graham = "good" if harga_sekarang < graham else "bad"
-                    label_graham = "UNDERVALUED ✅" if harga_sekarang < graham else "OVERVALUED ⚠️"
-                    render_metric_card("Graham Number", val_graham, status_graham, f"Harga: {val_harga_now} → {label_graham}")
-                else:
-                    render_metric_card("Graham Number", "N/A", "neutral", "Data EPS/BVPS tidak tersedia")
+                        render_metric_card("Graham Number", "N/A", "neutral", "Data EPS/BVPS tidak tersedia")
                 
             # DCF Intrinsic Value (Pro Mode Only)
             if st.session_state.get("pro_mode", False):
