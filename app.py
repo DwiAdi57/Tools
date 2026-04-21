@@ -394,67 +394,70 @@ def hapus_dari_portfolio(index):
         simpan_portfolio(df.reset_index(drop=True))
 
 
-@st.cache_data(ttl=300, show_spinner=False)
+@st.cache_data(ttl=600, show_spinner=False)
 def ambil_data_saham(ticker_symbol: str) -> dict:
     """
-    Ambil semua data saham dari yfinance.
+    Ambil semua data saham dari yfinance dengan mekanisme cache dan retry.
     Returns dict berisi info, history, financials, dll.
-    Cache selama 5 menit.
+    Cache selama 10 menit untuk mengurangi rate-limiting.
     """
-    try:
-        ticker = yf.Ticker(ticker_symbol)
-        info = ticker.info or {}
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            ticker = yf.Ticker(ticker_symbol)
+            info = ticker.info or {}
 
-        # Cek apakah ticker valid
-        if not info or info.get("regularMarketPrice") is None:
-            # Coba tanpa .JK jika gagal
-            if ".JK" in ticker_symbol:
-                alt = ticker_symbol.replace(".JK", "")
-                ticker = yf.Ticker(alt)
-                info = ticker.info or {}
-                if not info or info.get("regularMarketPrice") is None:
+            # Cek apakah ticker valid
+            if not info or info.get("regularMarketPrice") is None:
+                # Coba tanpa .JK jika gagal
+                if ".JK" in ticker_symbol:
+                    alt = ticker_symbol.replace(".JK", "")
+                    ticker = yf.Ticker(alt)
+                    info = ticker.info or {}
+                    if not info or info.get("regularMarketPrice") is None:
+                        return None
+                    ticker_symbol = alt
+                else:
                     return None
-                ticker_symbol = alt
 
-        # Ambil data historis 1 tahun
-        hist_1y = ticker.history(period="1y")
-        # Ambil data historis 5 tahun (untuk tren)
-        hist_5y = ticker.history(period="5y")
+            # Ambil data historis
+            hist_1y = ticker.history(period="1y")
+            hist_5y = ticker.history(period="5y")
 
-        # Coba ambil financial statements
-        try:
-            financials = ticker.financials
-        except Exception:
+            # Ambil financial statements (dengan error handling per item)
             financials = pd.DataFrame()
-
-        try:
-            balance_sheet = ticker.balance_sheet
-        except Exception:
             balance_sheet = pd.DataFrame()
-
-        try:
-            income_stmt = ticker.income_stmt
-        except Exception:
             income_stmt = pd.DataFrame()
-
-        try:
-            cash_flow = ticker.cashflow
-        except Exception:
             cash_flow = pd.DataFrame()
 
-        return {
-            "info": info,
-            "hist_1y": hist_1y,
-            "hist_5y": hist_5y,
-            "financials": financials,
-            "balance_sheet": balance_sheet,
-            "income_stmt": income_stmt,
-            "cash_flow": cash_flow,
-            "symbol": ticker_symbol,
-        }
-    except Exception as e:
-        st.error(f"Gagal mengambil data: {str(e)}")
-        return None
+            try: financials = ticker.financials except: pass
+            try: balance_sheet = ticker.balance_sheet except: pass
+            try: income_stmt = ticker.income_stmt except: pass
+            try: cash_flow = ticker.cashflow except: pass
+
+            return {
+                "info": info,
+                "hist_1y": hist_1y,
+                "hist_5y": hist_5y,
+                "financials": financials,
+                "balance_sheet": balance_sheet,
+                "income_stmt": income_stmt,
+                "cash_flow": cash_flow,
+                "ticker_obj": ticker
+            }
+
+        except Exception as e:
+            err_msg = str(e)
+            if "Too Many Requests" in err_msg or "429" in err_msg:
+                if attempt < max_retries - 1:
+                    time.sleep(2 * (attempt + 1))  # Exponential backoff
+                    continue
+                else:
+                    # Tampilkan pesan ke Streamlit jika benar-benar gagal setelah retry
+                    st.error(f"Gagal mengambil data: Too Many Requests. Rate limited. Try after a while.")
+                    return None
+            return None
+    return None
 
 
 def hitung_roe(data: dict) -> float:
