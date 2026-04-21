@@ -1843,261 +1843,261 @@ def main():
             skor_fund_final = min(100, skor_fund_final)
             # prospek akan didefinisikan setelah power_score di bawah
 
-        # 2. Teknikal
-        skor_teknik, reasons_teknik, color_teknik = hitung_skor_teknikal(data["hist_1y"])
-        
-        # 3. Master Synthesis
-        rekomendasi = buat_rekomendasi_master(skor_fund_final, skor_teknik, nama_saham)
-        power_score = (skor_fund_final * 0.6) + (skor_teknik * 0.4)
-        
-        # 4. Prospek Synthesis (After power_score is ready)
-        if is_crypto:
-            prospek = {
-                "label": "🚀 Momentum Kuat" if power_score > 70 else "📉 Tren Melemah" if power_score < 40 else "⏹️ Konsolidasi",
-                "confidence": "Rendah (Volatil)",
-                "signals": ["• High Volatility Asset", "• Sentiment Driven", "• Non-Fundamental Base"]
-            }
-        
-        # ------------------------------------------------------------------
-        # REKOMENDASI MASTER (MODERN UI)
-        # ------------------------------------------------------------------
-        if st.session_state.get("pro_mode", False):
-            st.markdown(f'<div style="text-align:right;"><small style="color:#666;">Data Reliability: {integrity:.1f}% Verified</small></div>', unsafe_allow_html=True)
+            # 2. Teknikal
+            skor_teknik, reasons_teknik, color_teknik = hitung_skor_teknikal(data["hist_1y"])
             
-        st.markdown(f'<div class="section-title">🌟 Master Signal: {rekomendasi["aksi"]}</div>', unsafe_allow_html=True)
-        
-        col_m1, col_m2, col_m3 = st.columns([1.5, 3, 1.5])
-        
-        with col_m1:
-            # Gauge Power Score
-            fig_power = buat_gauge_chart(power_score, f"{power_score:.0f}/100", "Master Power Score")
-            st.plotly_chart(fig_power, width='stretch')
+            # 3. Master Synthesis
+            rekomendasi = buat_rekomendasi_master(skor_fund_final, skor_teknik, nama_saham)
+            power_score = (skor_fund_final * 0.6) + (skor_teknik * 0.4)
             
-        with col_m2:
-            st.markdown(f"""
-            <div class="{rekomendasi['kelas']} rekom-box" style="height: 100%; display:flex; flex-direction:column; justify-content:center;">
-                <h1 style="color:white; margin:0; font-size:3rem; display:flex; align-items:center; gap:15px;">
-                    {rekomendasi['icon']} {rekomendasi['aksi']}
-                </h1>
-                <p style="color:rgba(255,255,255,0.9); margin-top:20px; font-size:1.1rem; line-height:1.8; font-weight:500;">
-                    {rekomendasi['penjelasan']}
-                </p>
-                <div style="margin-top:15px; display:flex; gap:10px;">
-                    <span class="score-badge" style="background:rgba(255,255,255,0.1); color:white;">Fund: {skor_fund_final:.0f}</span>
-                    <span class="score-badge" style="background:rgba(255,255,255,0.1); color:white;">Tech: {skor_teknik:.0f}</span>
+            # 4. Prospek Synthesis (After power_score is ready)
+            if is_crypto:
+                prospek = {
+                    "label": "🚀 Momentum Kuat" if power_score > 70 else "📉 Tren Melemah" if power_score < 40 else "⏹️ Konsolidasi",
+                    "confidence": "Rendah (Volatil)",
+                    "signals": ["• High Volatility Asset", "• Sentiment Driven", "• Non-Fundamental Base"]
+                }
+        
+            # ------------------------------------------------------------------
+            # REKOMENDASI MASTER (MODERN UI)
+            # ------------------------------------------------------------------
+            if st.session_state.get("pro_mode", False):
+                st.markdown(f'<div style="text-align:right;"><small style="color:#666;">Data Reliability: {integrity:.1f}% Verified</small></div>', unsafe_allow_html=True)
+                
+            st.markdown(f'<div class="section-title">🌟 Master Signal: {rekomendasi["aksi"]}</div>', unsafe_allow_html=True)
+            
+            col_m1, col_m2, col_m3 = st.columns([1.5, 3, 1.5])
+            
+            with col_m1:
+                # Gauge Power Score
+                fig_power = buat_gauge_chart(power_score, f"{power_score:.0f}/100", "Master Power Score")
+                st.plotly_chart(fig_power, width='stretch')
+                
+            with col_m2:
+                st.markdown(f"""
+                <div class="{rekomendasi['kelas']} rekom-box" style="height: 100%; display:flex; flex-direction:column; justify-content:center;">
+                    <h1 style="color:white; margin:0; font-size:3rem; display:flex; align-items:center; gap:15px;">
+                        {rekomendasi['icon']} {rekomendasi['aksi']}
+                    </h1>
+                    <p style="color:rgba(255,255,255,0.9); margin-top:20px; font-size:1.1rem; line-height:1.8; font-weight:500;">
+                        {rekomendasi['penjelasan']}
+                    </p>
+                    <div style="margin-top:15px; display:flex; gap:10px;">
+                        <span class="score-badge" style="background:rgba(255,255,255,0.1); color:white;">Fund: {skor_fund_final:.0f}</span>
+                        <span class="score-badge" style="background:rgba(255,255,255,0.1); color:white;">Tech: {skor_teknik:.0f}</span>
+                    </div>
                 </div>
-            </div>
-            """, unsafe_allow_html=True)
-            
-        with col_m3:
-            st.markdown('<div style="margin-top:20px;"></div>', unsafe_allow_html=True)
-            for r in reasons_teknik[:4]:
-                st.markdown(f'<div style="font-size:0.9rem; margin-bottom:8px; color:#e0e0ff;">{r}</div>', unsafe_allow_html=True)
+                """, unsafe_allow_html=True)
+                
+            with col_m3:
+                st.markdown('<div style="margin-top:20px;"></div>', unsafe_allow_html=True)
+                for r in reasons_teknik[:4]:
+                    st.markdown(f'<div style="font-size:0.9rem; margin-bottom:8px; color:#e0e0ff;">{r}</div>', unsafe_allow_html=True)
 
-        if not is_crypto:
-            st.markdown(f'<div class="section-title">📊 Detail Skor Fundamental</div>', unsafe_allow_html=True)
-            col_r1, col_r3 = st.columns([1, 1])
+            if not is_crypto:
+                st.markdown(f'<div class="section-title">📊 Detail Skor Fundamental</div>', unsafe_allow_html=True)
+                col_r1, col_r3 = st.columns([1, 1])
 
-            with col_r1:
-                fig_kualitas = buat_gauge_chart(skor_fund, label_fund, "Skor Fundamental (Kualitas)")
-                st.plotly_chart(fig_kualitas, width='stretch')
-                badge_class = "green" if "BERKUALITAS" in label_fund else ("red" if "KURANG" in label_fund else "yellow")
-                st.markdown(f'<div style="text-align:center"><span class="score-badge {badge_class}">{label_fund}</span></div>',
-                            unsafe_allow_html=True)
+                with col_r1:
+                    fig_kualitas = buat_gauge_chart(skor_fund, label_fund, "Skor Fundamental (Kualitas)")
+                    st.plotly_chart(fig_kualitas, width='stretch')
+                    badge_class = "green" if "BERKUALITAS" in label_fund else ("red" if "KURANG" in label_fund else "yellow")
+                    st.markdown(f'<div style="text-align:center"><span class="score-badge {badge_class}">{label_fund}</span></div>',
+                                unsafe_allow_html=True)
 
-            with col_r3:
-                fig_valuasi = buat_gauge_chart(skor_val, label_val, "Skor Valuasi (Mahal)")
-                st.plotly_chart(fig_valuasi, width='stretch')
-                badge_class_v = "green" if "MURAH" in label_val else ("red" if "MAHAL" in label_val else "yellow")
-                st.markdown(f'<div style="text-align:center"><span class="score-badge {badge_class_v}">{label_val}</span></div>',
-                            unsafe_allow_html=True)
-        else:
-            st.markdown(f'<div class="section-title">📊 Detail Skor Kripto</div>', unsafe_allow_html=True)
-            col_c1, col_c2 = st.columns([1, 1])
-            with col_c1:
-                fig_c_fund = buat_gauge_chart(skor_fund_final, "Digital Asset", "Digital Asset Score")
-                st.plotly_chart(fig_c_fund, width='stretch')
-            with col_c2:
-                # Show drop from ATH as a "Value" indicator for crypto
-                ath = info.get("allTimeHigh")
-                if ath and harga_sekarang:
-                    drop_ath = (ath - harga_sekarang) / ath * 100
-                    fig_drop = buat_gauge_chart(drop_ath, "Drop from ATH", "Drop from ATH (%)")
-                    st.plotly_chart(fig_drop, width='stretch')
-
-        if show_explanation:
-            st.markdown("""
-            <div class="explain-box">
-            <strong>📖 Cara Baca Rekomendasi:</strong><br>
-            • <strong>Skor Kualitas</strong>: Mengukur seberapa bagus perusahaan (ROE, utang, laba, dll). Makin tinggi makin bagus.<br>
-            • <strong>Skor Valuasi</strong>: Mengukur seberapa mahal harganya. Makin RENDAH skor valuasi, makin MURAH.<br>
-            • <strong>BELI</strong>: Perusahaan bagus + harga murah = "MERCY harga BAJAI" 🏆<br>
-            • <strong>TAHAN</strong>: Perusahaan bagus tapi harga wajar/agak mahal<br>
-            • <strong>JUAL</strong>: Perusahaan kurang bagus atau harga terlalu mahal
-            </div>
-            """, unsafe_allow_html=True)
-
-        # ------------------------------------------------------------------
-        # PROSPEK KE DEPAN
-        # ------------------------------------------------------------------
-        st.markdown(f'<div class="section-title">🔮 Prospek ke Depan</div>', unsafe_allow_html=True)
-
-        st.markdown(f"""
-        <div class="metric-card">
-            <div class="value" style="font-size:1.3rem; color:#e0e0ff;">{prospek['label']}</div>
-            <div class="sub" style="margin-top:10px;">Tingkat Keyakinan: <strong>{prospek['confidence']}</strong></div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        for signal in prospek["signals"]:
-            st.markdown(f"&nbsp;&nbsp;&nbsp;&nbsp;{signal}")
-
-        if show_explanation:
-            st.markdown("""
-            <div class="explain-box">
-            <strong>📖 Tentang Prospek:</strong><br>
-            Proyeksi ini berdasarkan data historis (tren laba, utang, efisiensi). Ini bukan jaminan masa depan,
-            tapi memberikan gambaran arah perusahaan berdasarkan kinerja sebelumnya.
-            Selalu cek berita terbaru dan laporan keuangan terkini.
-            </div>
-            """, unsafe_allow_html=True)
-
-        # ------------------------------------------------------------------
-        # GRAFIK ANALISA TEKNIKAL (ADVANCED)
-        # ------------------------------------------------------------------
-        st.markdown(f'<div class="section-title">📈 Trend & Momentum Analysis (Master Chart)</div>', unsafe_allow_html=True)
-
-        with st.container(border=True):
-            fig_master = buat_chart_harga(data["hist_1y"], nama_saham)
-            if fig_master:
-                st.plotly_chart(fig_master, width='stretch')
+                with col_r3:
+                    fig_valuasi = buat_gauge_chart(skor_val, label_val, "Skor Valuasi (Mahal)")
+                    st.plotly_chart(fig_valuasi, width='stretch')
+                    badge_class_v = "green" if "MURAH" in label_val else ("red" if "MAHAL" in label_val else "yellow")
+                    st.markdown(f'<div style="text-align:center"><span class="score-badge {badge_class_v}">{label_val}</span></div>',
+                                unsafe_allow_html=True)
             else:
-                st.warning("Data historis harga tidak tersedia untuk kalkulasi teknikal.")
+                st.markdown(f'<div class="section-title">📊 Detail Skor Kripto</div>', unsafe_allow_html=True)
+                col_c1, col_c2 = st.columns([1, 1])
+                with col_c1:
+                    fig_c_fund = buat_gauge_chart(skor_fund_final, "Digital Asset", "Digital Asset Score")
+                    st.plotly_chart(fig_c_fund, width='stretch')
+                with col_c2:
+                    # Show drop from ATH as a "Value" indicator for crypto
+                    ath = info.get("allTimeHigh")
+                    if ath and harga_sekarang:
+                        drop_ath = (ath - harga_sekarang) / ath * 100
+                        fig_drop = buat_gauge_chart(drop_ath, "Drop from ATH", "Drop from ATH (%)")
+                        st.plotly_chart(fig_drop, width='stretch')
 
-        # Volatility & Momentum Analysis (Pro Mode)
-        if st.session_state.get("pro_mode", False):
-            col_v1, col_v2 = st.columns(2)
-            with col_v1:
-                st.markdown("#### ⚡ Volatility Analysis")
-                hist = data["hist_1y"]
-                if not hist.empty:
-                    std_dev = hist['Close'].pct_change().std() * (252**0.5) # Annualized Volatility
-                    st.metric("Annualized Volatility", f"{std_dev*100:.1f}%", help="Standar deviasi pergerakan harga setahun. >30% dianggap volatil.")
-            with col_v2:
-                st.markdown("#### 🚀 Momentum Signals")
-                rsi_val = hitung_rsi(hist)
-                if rsi_val:
-                    rsi_label = "Jenuh Beli (Sell?)" if rsi_val > 70 else ("Jenuh Jual (Buy?)" if rsi_val < 30 else "Normal")
-                    st.metric("RSI (14)", f"{rsi_val:.1f}", rsi_label)
+            if show_explanation:
+                st.markdown("""
+                <div class="explain-box">
+                <strong>📖 Cara Baca Rekomendasi:</strong><br>
+                • <strong>Skor Kualitas</strong>: Mengukur seberapa bagus perusahaan (ROE, utang, laba, dll). Makin tinggi makin bagus.<br>
+                • <strong>Skor Valuasi</strong>: Mengukur seberapa mahal harganya. Makin RENDAH skor valuasi, makin MURAH.<br>
+                • <strong>BELI</strong>: Perusahaan bagus + harga murah = "MERCY harga BAJAI" 🏆<br>
+                • <strong>TAHAN</strong>: Perusahaan bagus tapi harga wajar/agak mahal<br>
+                • <strong>JUAL</strong>: Perusahaan kurang bagus atau harga terlalu mahal
+                </div>
+                """, unsafe_allow_html=True)
 
-        if not is_crypto:
             # ------------------------------------------------------------------
-            # SCREENING KUALITAS (Detail)
+            # PROSPEK KE DEPAN
             # ------------------------------------------------------------------
-            st.markdown(f'<div class="section-title">🏅 Screening Kualitas Perusahaan</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="section-title">🔮 Prospek ke Depan</div>', unsafe_allow_html=True)
 
-            col_q1, col_q2, col_q3, col_q4, col_q5 = st.columns(5)
+            st.markdown(f"""
+            <div class="metric-card">
+                <div class="value" style="font-size:1.3rem; color:#e0e0ff;">{prospek['label']}</div>
+                <div class="sub" style="margin-top:10px;">Tingkat Keyakinan: <strong>{prospek['confidence']}</strong></div>
+            </div>
+            """, unsafe_allow_html=True)
 
-            with col_q1:
-                status_roe = "good" if (roe and roe >= 15) else ("neutral" if (roe and roe >= 10) else "bad")
-                val_roe = f"{roe:.1f}%" if roe is not None else "N/A"
-                render_metric_card("ROE", val_roe, status_roe, "Target: ≥ 15%")
-                if show_explanation:
-                    st.markdown(f'<div class="explain-box">{PENJELASAN.get("ROE", "")}</div>', unsafe_allow_html=True)
+            for signal in prospek["signals"]:
+                st.markdown(f"&nbsp;&nbsp;&nbsp;&nbsp;{signal}")
 
-            with col_q2:
-                status_der = "good" if (der is not None and der <= 0.5) else ("neutral" if (der is not None and der <= 1.0) else "bad")
-                val_der = f"{der:.2f}x" if der is not None else "N/A"
-                render_metric_card("DER", val_der, status_der, "Target: ≤ 0.5x")
-                if show_explanation:
-                    st.markdown(f'<div class="explain-box">{PENJELASAN.get("DER", "")}</div>', unsafe_allow_html=True)
+            if show_explanation:
+                st.markdown("""
+                <div class="explain-box">
+                <strong>📖 Tentang Prospek:</strong><br>
+                Proyeksi ini berdasarkan data historis (tren laba, utang, efisiensi). Ini bukan jaminan masa depan,
+                tapi memberikan gambaran arah perusahaan berdasarkan kinerja sebelumnya.
+                Selalu cek berita terbaru dan laporan keuangan terkini.
+                </div>
+                """, unsafe_allow_html=True)
 
-            with col_q3:
-                status_cr = "good" if (cr and cr >= 1.5) else ("neutral" if (cr and cr >= 1.0) else "bad")
-                val_cr = f"{cr:.2f}x" if cr is not None else "N/A"
-                render_metric_card("Current Ratio", val_cr, status_cr, "Target: ≥ 1.5x")
-                if show_explanation:
-                    st.markdown(f'<div class="explain-box">{PENJELASAN.get("CR", "")}</div>', unsafe_allow_html=True)
+            # ------------------------------------------------------------------
+            # GRAFIK ANALISA TEKNIKAL (ADVANCED)
+            # ------------------------------------------------------------------
+            st.markdown(f'<div class="section-title">📈 Trend & Momentum Analysis (Master Chart)</div>', unsafe_allow_html=True)
 
-            with col_q4:
-                if eg_data:
-                    status_eg = "good" if eg_data["avg_growth"] > 5 else ("neutral" if eg_data["avg_growth"] >= 0 else "bad")
-                    val_eg = f"{eg_data['avg_growth']:.1f}%"
-                    eg_trend = eg_data["trend"]
+            with st.container(border=True):
+                fig_master = buat_chart_harga(data["hist_1y"], nama_saham)
+                if fig_master:
+                    st.plotly_chart(fig_master, width='stretch')
                 else:
-                    status_eg = "bad"
-                    val_eg = "N/A"
-                    eg_trend = ""
-                render_metric_card("Earnings Growth", val_eg, status_eg, f"Tren: {eg_trend}")
-                if show_explanation:
-                    st.markdown(f'<div class="explain-box">{PENJELASAN.get("EG", "")}</div>', unsafe_allow_html=True)
+                    st.warning("Data historis harga tidak tersedia untuk kalkulasi teknikal.")
 
-            with col_q5:
-                status_npm = "good" if (npm and npm >= 10) else ("neutral" if (npm and npm >= 5) else "bad")
-                val_npm = f"{npm:.1f}%" if npm is not None else "N/A"
-                render_metric_card("Net Profit Margin", val_npm, status_npm, "Target: ≥ 10%")
-                if show_explanation:
-                    st.markdown(f'<div class="explain-box">{PENJELASAN["NPM"]}</div>', unsafe_allow_html=True)
-        else:
-            # ------------------------------------------------------------------
-            # SCREENING KRIPTO (Detail)
-            # ------------------------------------------------------------------
-            st.markdown(f'<div class="section-title">🌕 Statistik Jaringan & Suplai (CRYPTO)</div>', unsafe_allow_html=True)
-            col_cr1, col_cr2, col_cr3, col_cr4 = st.columns(4)
+            # Volatility & Momentum Analysis (Pro Mode)
+            if st.session_state.get("pro_mode", False):
+                col_v1, col_v2 = st.columns(2)
+                with col_v1:
+                    st.markdown("#### ⚡ Volatility Analysis")
+                    hist = data["hist_1y"]
+                    if not hist.empty:
+                        std_dev = hist['Close'].pct_change().std() * (252**0.5) # Annualized Volatility
+                        st.metric("Annualized Volatility", f"{std_dev*100:.1f}%", help="Standar deviasi pergerakan harga setahun. >30% dianggap volatil.")
+                with col_v2:
+                    st.markdown("#### 🚀 Momentum Signals")
+                    rsi_val = hitung_rsi(hist)
+                    if rsi_val:
+                        rsi_label = "Jenuh Beli (Sell?)" if rsi_val > 70 else ("Jenuh Jual (Buy?)" if rsi_val < 30 else "Normal")
+                        st.metric("RSI (14)", f"{rsi_val:.1f}", rsi_label)
+
+            if not is_crypto:
+                # ------------------------------------------------------------------
+                # SCREENING KUALITAS (Detail)
+                # ------------------------------------------------------------------
+                st.markdown(f'<div class="section-title">🏅 Screening Kualitas Perusahaan</div>', unsafe_allow_html=True)
+
+                col_q1, col_q2, col_q3, col_q4, col_q5 = st.columns(5)
+
+                with col_q1:
+                    status_roe = "good" if (roe and roe >= 15) else ("neutral" if (roe and roe >= 10) else "bad")
+                    val_roe = f"{roe:.1f}%" if roe is not None else "N/A"
+                    render_metric_card("ROE", val_roe, status_roe, "Target: ≥ 15%")
+                    if show_explanation:
+                        st.markdown(f'<div class="explain-box">{PENJELASAN.get("ROE", "")}</div>', unsafe_allow_html=True)
+
+                with col_q2:
+                    status_der = "good" if (der is not None and der <= 0.5) else ("neutral" if (der is not None and der <= 1.0) else "bad")
+                    val_der = f"{der:.2f}x" if der is not None else "N/A"
+                    render_metric_card("DER", val_der, status_der, "Target: ≤ 0.5x")
+                    if show_explanation:
+                        st.markdown(f'<div class="explain-box">{PENJELASAN.get("DER", "")}</div>', unsafe_allow_html=True)
+
+                with col_q3:
+                    status_cr = "good" if (cr and cr >= 1.5) else ("neutral" if (cr and cr >= 1.0) else "bad")
+                    val_cr = f"{cr:.2f}x" if cr is not None else "N/A"
+                    render_metric_card("Current Ratio", val_cr, status_cr, "Target: ≥ 1.5x")
+                    if show_explanation:
+                        st.markdown(f'<div class="explain-box">{PENJELASAN.get("CR", "")}</div>', unsafe_allow_html=True)
+
+                with col_q4:
+                    if eg_data:
+                        status_eg = "good" if eg_data["avg_growth"] > 5 else ("neutral" if eg_data["avg_growth"] >= 0 else "bad")
+                        val_eg = f"{eg_data['avg_growth']:.1f}%"
+                        eg_trend = eg_data["trend"]
+                    else:
+                        status_eg = "bad"
+                        val_eg = "N/A"
+                        eg_trend = ""
+                    render_metric_card("Earnings Growth", val_eg, status_eg, f"Tren: {eg_trend}")
+                    if show_explanation:
+                        st.markdown(f'<div class="explain-box">{PENJELASAN.get("EG", "")}</div>', unsafe_allow_html=True)
+
+                with col_q5:
+                    status_npm = "good" if (npm and npm >= 10) else ("neutral" if (npm and npm >= 5) else "bad")
+                    val_npm = f"{npm:.1f}%" if npm is not None else "N/A"
+                    render_metric_card("Net Profit Margin", val_npm, status_npm, "Target: ≥ 10%")
+                    if show_explanation:
+                        st.markdown(f'<div class="explain-box">{PENJELASAN["NPM"]}</div>', unsafe_allow_html=True)
+            else:
+                # ------------------------------------------------------------------
+                # SCREENING KRIPTO (Detail)
+                # ------------------------------------------------------------------
+                st.markdown(f'<div class="section-title">🌕 Statistik Jaringan & Suplai (CRYPTO)</div>', unsafe_allow_html=True)
+                col_cr1, col_cr2, col_cr3, col_cr4 = st.columns(4)
+                
+                with col_cr1:
+                    ath_val = info.get("allTimeHigh")
+                    ath_str = format_mata_uang(ath_val, currency) if ath_val else "N/A"
+                    render_metric_card("🏔️ All-Time High", ath_str, "neutral", "Harga tertinggi sepanjang masa")
             
-            with col_cr1:
-                ath_val = info.get("allTimeHigh")
-                ath_str = format_mata_uang(ath_val, currency) if ath_val else "N/A"
-                render_metric_card("🏔️ All-Time High", ath_str, "neutral", "Harga tertinggi sepanjang masa")
-            
-            with col_cr2:
-                circ_supply = info.get("circulatingSupply")
-                circ_str = f"{circ_supply:,.0f}" if circ_supply else "N/A"
-                render_metric_card("🔄 Circulating Supply", circ_str, "neutral", f"Unit yang beredar")
+                with col_cr2:
+                    circ_supply = info.get("circulatingSupply")
+                    circ_str = f"{circ_supply:,.0f}" if circ_supply else "N/A"
+                    render_metric_card("🔄 Circulating Supply", circ_str, "neutral", f"Unit yang beredar")
 
-            with col_cr3:
-                max_supply = info.get("maxSupply")
-                max_str = f"{max_supply:,.0f}" if max_supply else "Tak Terbatas"
-                render_metric_card("📦 Max Supply", max_str, "neutral", "Batas maksimal koin")
+                with col_cr3:
+                    max_supply = info.get("maxSupply")
+                    max_str = f"{max_supply:,.0f}" if max_supply else "Tak Terbatas"
+                    render_metric_card("📦 Max Supply", max_str, "neutral", "Batas maksimal koin")
 
-            with col_cr4:
-                dist_ath = ((info.get("allTimeHigh", 0) - harga_sekarang) / info.get("allTimeHigh", 1) * 100) if info.get("allTimeHigh") else 0
-                render_metric_card("📉 Drop dari ATH", f"{dist_ath:.1f}%", "bad" if dist_ath < 20 else "good", "Jarak dari puncak")
+                with col_cr4:
+                    dist_ath = ((info.get("allTimeHigh", 0) - harga_sekarang) / info.get("allTimeHigh", 1) * 100) if info.get("allTimeHigh") else 0
+                    render_metric_card("📉 Drop dari ATH", f"{dist_ath:.1f}%", "bad" if dist_ath < 20 else "good", "Jarak dari puncak")
 
-        if not is_crypto:
-            # ------------------------------------------------------------------
-            # SCREENING VALUASI (Detail)
-            # ------------------------------------------------------------------
-            st.markdown(f'<div class="section-title">💰 Screening Valuasi (Harga Murah?)</div>', unsafe_allow_html=True)
+            if not is_crypto:
+                # ------------------------------------------------------------------
+                # SCREENING VALUASI (Detail)
+                # ------------------------------------------------------------------
+                st.markdown(f'<div class="section-title">💰 Screening Valuasi (Harga Murah?)</div>', unsafe_allow_html=True)
 
-            col_v1, col_v2, col_v3, col_v4 = st.columns(4)
+                col_v1, col_v2, col_v3, col_v4 = st.columns(4)
 
-            with col_v1:
-                status_per = "good" if (per and per < 15) else ("neutral" if (per and per < 25) else "bad")
-                val_per = f"{per:.1f}x" if per is not None else "N/A"
-                murah_per = "Sangat Murah! 🔥" if (per and per < 10) else ("Murah ✅" if (per and per < 15) else ("Wajar" if (per and per < 25) else "Mahal ⚠️"))
-                render_metric_card("PER", val_per, status_per, murah_per)
-                if show_explanation:
-                    st.markdown(f'<div class="explain-box">{PENJELASAN["PER"]}</div>', unsafe_allow_html=True)
+                with col_v1:
+                    status_per = "good" if (per and per < 15) else ("neutral" if (per and per < 25) else "bad")
+                    val_per = f"{per:.1f}x" if per is not None else "N/A"
+                    murah_per = "Sangat Murah! 🔥" if (per and per < 10) else ("Murah ✅" if (per and per < 15) else ("Wajar" if (per and per < 25) else "Mahal ⚠️"))
+                    render_metric_card("PER", val_per, status_per, murah_per)
+                    if show_explanation:
+                        st.markdown(f'<div class="explain-box">{PENJELASAN["PER"]}</div>', unsafe_allow_html=True)
 
-            with col_v2:
-                status_pbv = "good" if (pbv and pbv < 1.5) else ("neutral" if (pbv and pbv < 3) else "bad")
-                val_pbv = f"{pbv:.2f}x" if pbv is not None else "N/A"
-                murah_pbv = "Sangat Murah! 🔥" if (pbv and pbv < 1) else ("Murah ✅" if (pbv and pbv < 1.5) else ("Wajar" if (pbv and pbv < 3) else "Mahal ⚠️"))
-                render_metric_card("PBV", val_pbv, status_pbv, murah_pbv)
-                if show_explanation:
-                    st.markdown(f'<div class="explain-box">{PENJELASAN["PBV"]}</div>', unsafe_allow_html=True)
+                with col_v2:
+                    status_pbv = "good" if (pbv and pbv < 1.5) else ("neutral" if (pbv and pbv < 3) else "bad")
+                    val_pbv = f"{pbv:.2f}x" if pbv is not None else "N/A"
+                    murah_pbv = "Sangat Murah! 🔥" if (pbv and pbv < 1) else ("Murah ✅" if (pbv and pbv < 1.5) else ("Wajar" if (pbv and pbv < 3) else "Mahal ⚠️"))
+                    render_metric_card("PBV", val_pbv, status_pbv, murah_pbv)
+                    if show_explanation:
+                        st.markdown(f'<div class="explain-box">{PENJELASAN["PBV"]}</div>', unsafe_allow_html=True)
 
-            with col_v3:
-                status_dy = "good" if (dy and dy >= 3) else ("neutral" if (dy and dy >= 1) else "bad")
-                val_dy = f"{dy:.2f}%" if dy is not None else "N/A"
-                menarik_dy = "Sangat Menarik! 🔥" if (dy and dy >= 5) else ("Menarik ✅" if (dy and dy >= 3) else ("Cukup" if (dy and dy >= 1) else "Rendah"))
-                render_metric_card("Dividend Yield", val_dy, status_dy, menarik_dy)
-                if show_explanation:
-                    st.markdown(f'<div class="explain-box">{PENJELASAN["DY"]}</div>', unsafe_allow_html=True)
+                with col_v3:
+                    status_dy = "good" if (dy and dy >= 3) else ("neutral" if (dy and dy >= 1) else "bad")
+                    val_dy = f"{dy:.2f}%" if dy is not None else "N/A"
+                    menarik_dy = "Sangat Menarik! 🔥" if (dy and dy >= 5) else ("Menarik ✅" if (dy and dy >= 3) else ("Cukup" if (dy and dy >= 1) else "Rendah"))
+                    render_metric_card("Dividend Yield", val_dy, status_dy, menarik_dy)
+                    if show_explanation:
+                        st.markdown(f'<div class="explain-box">{PENJELASAN["DY"]}</div>', unsafe_allow_html=True)
 
-            with col_v4:
-                if graham and harga_sekarang:
+                with col_v4:
+                    if graham and harga_sekarang:
                     if currency == "IDR":
                         val_graham = f"{graham:,.0f}"
                         val_harga_now = f"{harga_sekarang:,.0f}"
