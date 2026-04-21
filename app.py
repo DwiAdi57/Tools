@@ -100,13 +100,8 @@ st.markdown(f"""
     /* === BASE FONT & RESPONSIVENESS === */
     html, body, [class*="css"] {{
         font-family: 'Public Sans', sans-serif;
-        font-size: 16px; /* Base 16px for standard 100% zoom clarity */
     }}
     
-    @media (max-width: 768px) {{
-        html, body, [class*="css"] {{ font-size: 14px; }}
-    }}
-
     code, pre {{
         font-family: 'JetBrains Mono', monospace !important;
     }}
@@ -120,113 +115,131 @@ st.markdown(f"""
     /* === GLASSMORPHISM CARDS === */
     .metric-card, .rekom-box, .explain-box {{
         background: var(--bg-card) !important;
-        backdrop-filter: blur(12px) !important;
+        backdrop-filter: blur(16px) saturate(180%) !important;
         border: 1px solid var(--border) !important;
-        border-radius: 16px !important;
-        padding: 1.25rem !important;
+        border-radius: 20px !important;
+        padding: 1rem !important;
         box-shadow: var(--shadow) !important;
-        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s ease !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
     }}
     
     .metric-card:hover {{
-        transform: translateY(-5px);
+        transform: translateY(-4px);
         border-color: var(--accent) !important;
+        background: rgba(255,255,255,0.03) !important;
+        box-shadow: 0 12px 40px rgba(0,0,0,0.3) !important;
     }}
 
     /* === RESPONSIVE LAYOUT FIXES === */
+    /* Remove global width force to prevent "berantakan" UI */
     [data-testid="column"] {{
-        width: 100% !important;
-        flex: 1 1 calc(50% - 1rem) !important; /* Allow columns to wrap on tablet */
-        min-width: 250px !important;
+        padding: 0.5rem !important;
     }}
     
+    @media (max-width: 1200px) {{
+        [data-testid="column"] {{ min-width: 45% !important; }}
+    }}
     @media (max-width: 640px) {{
-        [data-testid="column"] {{
-            min-width: 100% !important;
-        }}
+        [data-testid="column"] {{ min-width: 100% !important; }}
     }}
 
     /* === HERO HEADER === */
     .hero-box {{
-        background: linear-gradient(135deg, var(--bg-sidebar) 0%, var(--bg-main) 100%);
-        border-radius: 20px;
-        padding: 2.25rem;
-        margin-bottom: 2rem;
+        background: linear-gradient(135deg, rgba(30,41,59,0.5) 0%, rgba(15,23,42,0.8) 100%);
+        border-radius: 24px;
+        padding: 1.5rem 2rem;
+        margin-bottom: 1.5rem;
         border: 1px solid var(--border);
         box-shadow: var(--shadow);
+        position: relative;
+        overflow: hidden;
+    }}
+    .hero-box::before {{
+        content: "";
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, var(--accent) 0%, transparent 60%);
+        opacity: 0.05;
+        z-index: 0;
     }}
     .hero-box h1 {{
-        font-size: 2rem;
+        font-size: 1.8rem;
         font-weight: 800;
         color: var(--text-main);
         margin: 0;
-        line-height: 1.2;
+        letter-spacing: -0.5px;
+        position: relative;
+        z-index: 1;
+    }}
+    .hero-box p {{
+        position: relative;
+        z-index: 1;
+        margin-top: 5px;
     }}
 
     /* === SECTION TITLES === */
     .section-title {{
-        font-size: 1.15rem;
+        font-size: 1rem;
         font-weight: 700;
         color: var(--accent);
-        margin: 2rem 0 1rem 0;
+        margin: 1.5rem 0 0.75rem 0;
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
     }}
 
     /* === METRIC VALUES === */
     .metric-card .value {{
-        font-size: 1.5rem;
+        font-size: 1.25rem;
         font-weight: 800;
-        color: var(--accent);
-        line-height: 1.1;
+        color: var(--text-main);
+        line-height: 1.2;
+        margin: 4px 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }}
     .metric-card .label {{
-        font-size: 0.8rem;
+        font-size: 0.7rem;
         color: var(--text-sub);
         text-transform: uppercase;
-        letter-spacing: 0.8px;
-        margin-bottom: 0.4rem;
+        letter-spacing: 1px;
+        font-weight: 600;
     }}
     .metric-card .sub {{
-        font-size: 0.75rem;
+        font-size: 0.7rem;
         color: var(--text-sub);
-        margin-top: 5px;
+        opacity: 0.8;
     }}
-
-    /* === SIDEBAR CUSTOMIZATION === */
-    section[data-testid="stSidebar"] {{
-        background-color: var(--bg-sidebar) !important;
-        border-right: 1px solid var(--border);
-    }}
+    .metric-card.good .sub {{ color: #4ade80; }}
+    .metric-card.bad .sub {{ color: #f43f5e; }}
 
     /* === TABS CUSTOMIZATION === */
     .stTabs [data-baseweb="tab-list"] {{
-        gap: 10px;
+        gap: 8px;
+        background: transparent;
     }}
     .stTabs [data-baseweb="tab"] {{
         background-color: var(--bg-card);
-        border-radius: 8px 8px 0 0;
-        padding: 10px 20px;
-        color: var(--text-sub);
+        border: 1px solid var(--border);
+        border-radius: 12px 12px 0 0 !important;
+        padding: 8px 16px !important;
+        font-weight: 600 !important;
     }}
-    .stTabs [aria-selected="true"] {{
-        color: var(--accent) !important;
-        border-bottom-color: var(--accent) !important;
+    
+    /* === SIDEBAR === */
+    [data-testid="stSidebar"] {{
+        padding-top: 1rem;
     }}
-
-    /* === SCORE BADGES === */
-    .score-badge {{
-        display: inline-block;
-        padding: 4px 12px;
-        border-radius: 50px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        margin: 5px 0;
-    }}
-    .score-badge.green {{ background: rgba(74, 222, 128, 0.15); color: #4ade80; }}
-    .score-badge.red {{ background: rgba(244, 63, 94, 0.15); color: #f43f5e; }}
-    .score-badge.yellow {{ background: rgba(245, 158, 11, 0.15); color: #f59e0b; }}
 
 </style>
 """, unsafe_allow_html=True)
@@ -446,8 +459,7 @@ def ambil_data_saham(ticker_symbol: str) -> dict:
                 "financials": financials,
                 "balance_sheet": balance_sheet,
                 "income_stmt": income_stmt,
-                "cash_flow": cash_flow,
-                "ticker_obj": ticker
+                "cash_flow": cash_flow
             }
 
         except Exception as e:
